@@ -314,3 +314,4 @@ final_output[3, "N_pre_condition_per_class"] = out[2,1]
 final_output[3, "correct inference rate"] = mean(as.logical(out[3,])) # power to make correct inference on ALL claims
 final_output[3, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorrect inference on any one claim
 
+final_output
