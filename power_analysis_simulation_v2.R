@@ -9,7 +9,7 @@ mysamp <- function(n, m, s, lwr, upr, rounding) {
 }
 
 
-
+library(pbapply)
 library(reshape2)
 library(BayesFactor)
 
@@ -272,14 +272,15 @@ names(final_output) = c("true effect pattern", "N_pre_condition_per_class", "cor
 
 
 
-iterations = 1000
-effect_size = 0.276 # 0.23 is half of the original effect size. The original effect size in both studies was roughly 0.46. 1.02/2.19 in study 2 and 1.01/2.19 in study 1
-sample_size = 700
-prior_rscales = 2.5
+iterations = 10000
+effect_size = 0.3 # 0.23 is half of the original effect size. The original effect size in both studies was roughly 0.46. 1.02/2.19 in study 2 and 1.01/2.19 in study 1
+sample_size = 900
+prior_rscales = 3
+bf_threshold_to_use = 5
 
-pb <- txtProgressBar(min = 0, max = total, style = 3)
 
-out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
+print("Simulationg scenario 1/3")
+out = pbreplicate(iterations, simulation_func(bf_thresholds = c(bf_threshold_to_use, 1/bf_threshold_to_use),
                                             main_inference_method = "method_1", 
                                             true_effect = "original effect in all cultures", 
                                             N_pre_condition_per_class = sample_size,
@@ -294,9 +295,8 @@ final_output[1, "N_pre_condition_per_class"] = out[2,1]
 final_output[1, "correct inference rate"] = mean(as.logical(out[3,])) # power to make correct inference on ALL claims
 final_output[1, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorrect inference on any one claim
 
-pb <- txtProgressBar(min = 0, max = total, style = 3)
-
-out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
+print("Simulationg scenario 2/3")
+out = pbreplicate(iterations, simulation_func(bf_thresholds = c(bf_threshold_to_use, 1/bf_threshold_to_use),
                                             main_inference_method = "method_1", 
                                             true_effect = "a culture replicates only", 
                                             N_pre_condition_per_class = sample_size,
@@ -312,10 +312,9 @@ final_output[2, "N_pre_condition_per_class"] = out[2,1]
 final_output[2, "correct inference rate"] = mean(as.logical(out[3,])) # power to make correct inference on ALL claims
 final_output[2, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorrect inference on any one claim
 
-#########N_pre_condition_per_class has to be multiplied by 16.
 
-pb <- txtProgressBar(min = 0, max = total, style = 3)
-out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
+print("Simulationg scenario 3/3")
+out = pbreplicate(iterations, simulation_func(bf_thresholds = c(bf_threshold_to_use, 1/bf_threshold_to_use),
                                             main_inference_method = "method_1", 
                                             true_effect = "null effects", 
                                             N_pre_condition_per_class = sample_size,
@@ -330,5 +329,7 @@ final_output[3, "true effect pattern"] = out[1,1]
 final_output[3, "N_pre_condition_per_class"] = out[2,1]
 final_output[3, "correct inference rate"] = mean(as.logical(out[3,])) # power to make correct inference on ALL claims
 final_output[3, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorrect inference on any one claim
+
+#########N_pre_condition_per_class has to be multiplied by 24.
 
 final_output
