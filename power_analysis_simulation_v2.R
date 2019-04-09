@@ -21,7 +21,9 @@ simulation_func = function(
   true_effect = "original effect in all cultures", #either  "a culture replicates only", "original effect in all cultures"
   N_pre_condition_per_class = 3000,
   which_study_to_test = "study_1", #either "study_1", "study_2", or "both"
-  prior = "medium" #either "medium", "wide", "ultrawide", BayesFactor package default is "medium"
+  prior = "medium", #either "medium", "wide", "ultrawide", BayesFactor package default is "medium"
+  SMD_Effect_size_study2 = 1.01/2.19, # this is the effect identified in the original study
+  SMD_Effect_size_study1 = 1.02/2.19
 ){
   class_names = c("a", "b", "c")
   if(true_effect == "a culture replicates only"){
@@ -63,60 +65,62 @@ simulation_func = function(
   
   if(which_study_to_test == "study_2" | which_study_to_test == "both"){
     if(true_effect == "a culture replicates only"){
-      v1_a = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=5.89, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=6.25, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study2), s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       
     } else if(true_effect == "original effect in all cultures"){
-      v1_a = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=5.89, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=6.25, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study2), s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=5.89, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=6.25, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study2), s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=5.89, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=6.25, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study2), s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else if(true_effect == "null effects"){
-      v1_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else(print("ERROR: No valid effect specified"))
     
     
     #############################################STUDY2 - CULTURE1 ANALYSIS
     full_data=data.frame(v1_a, v2_a, v3_a, v4_a, v1_b, v2_b, v3_b, v4_b, v1_c, v2_c, v3_c, v4_c)
+    suppressMessages({
     full_data2=melt(full_data, variable.name="code", value.name="choice")
+    })
     
     code<-"v([1-9]+)_([a-z]+)"
     full_data2$condition=as.integer(sub(code, "\\1", full_data2$code))
@@ -159,59 +163,61 @@ simulation_func = function(
   
   if(which_study_to_test == "study_1" | which_study_to_test == "both"){
     if(true_effect == "a culture replicates only"){
-      v1_a = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=4.15, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=5.14, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       
     } else if(true_effect == "original effect in all cultures"){
-      v1_a = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=4.15, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=5.14, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=4.15, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=5.14, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=4.98, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=4.15, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=5.14, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5.85, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else if(true_effect == "null effects"){
-      v1_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
-      v1_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v2_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=5, s=2.19, lwr=1, upr=9, rounding=0)
+      v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
+      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else(print("ERROR: No valid effect specified"))
     
     
     full_data=data.frame(v1_a, v2_a, v3_a, v4_a, v1_b, v2_b, v3_b, v4_b, v1_c, v2_c, v3_c, v4_c)
-    full_data2=melt(full_data, variable.name="code", value.name="choice")
+    suppressMessages({
+      full_data2=melt(full_data, variable.name="code", value.name="choice")
+    })
     
     code<-"v([1-9]+)_([a-z]+)"
     full_data2$condition=as.integer(sub(code, "\\1", full_data2$code))
@@ -263,17 +269,24 @@ simulation_func = function(
 
 final_output = as.data.frame(matrix(NA, nrow = 3, ncol = 4))
 names(final_output) = c("true effect pattern", "N_pre_condition_per_class", "correct inference rate", "incorrect inference rate")
-                             
-                
 
-iterations = 10000
+
+
+iterations = 1000
+effect_size = 0.276 # 0.23 is half of the original effect size. The original effect size in both studies was roughly 0.46. 1.02/2.19 in study 2 and 1.01/2.19 in study 1
+sample_size = 700
+prior_rscales = 2.5
+
+pb <- txtProgressBar(min = 0, max = total, style = 3)
 
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "original effect in all cultures", 
-                                            N_pre_condition_per_class = 750,
+                                            N_pre_condition_per_class = sample_size,
                                             which_study_to_test = "both", 
-                                            prior = "wide" 
+                                            prior = prior_rscales,
+                                            SMD_Effect_size_study2 = effect_size,
+                                            SMD_Effect_size_study1 = effect_size 
 ))
 
 final_output[1, "true effect pattern"] = out[1,1]
@@ -281,13 +294,16 @@ final_output[1, "N_pre_condition_per_class"] = out[2,1]
 final_output[1, "correct inference rate"] = mean(as.logical(out[3,])) # power to make correct inference on ALL claims
 final_output[1, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorrect inference on any one claim
 
+pb <- txtProgressBar(min = 0, max = total, style = 3)
 
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "a culture replicates only", 
-                                            N_pre_condition_per_class = 750,
+                                            N_pre_condition_per_class = sample_size,
                                             which_study_to_test = "both", 
-                                            prior = "wide" 
+                                            prior = prior_rscales,
+                                            SMD_Effect_size_study2 = effect_size,
+                                            SMD_Effect_size_study1 = effect_size 
 ))
 
 
@@ -298,14 +314,15 @@ final_output[2, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorr
 
 #########N_pre_condition_per_class has to be multiplied by 16.
 
-
-
+pb <- txtProgressBar(min = 0, max = total, style = 3)
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "null effects", 
-                                            N_pre_condition_per_class = 750,
+                                            N_pre_condition_per_class = sample_size,
                                             which_study_to_test = "both", 
-                                            prior = "wide" 
+                                            prior = prior_rscales,
+                                            SMD_Effect_size_study2 = effect_size,
+                                            SMD_Effect_size_study1 = effect_size
 ))
 
 
