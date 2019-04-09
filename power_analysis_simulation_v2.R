@@ -266,12 +266,12 @@ names(final_output) = c("true effect pattern", "N_pre_condition_per_class", "cor
                              
                 
 
-iterations = 2000
+iterations = 10000
 
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "original effect in all cultures", 
-                                            N_pre_condition_per_class = 700,
+                                            N_pre_condition_per_class = 750,
                                             which_study_to_test = "both", 
                                             prior = "wide" 
 ))
@@ -285,7 +285,7 @@ final_output[1, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorr
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "a culture replicates only", 
-                                            N_pre_condition_per_class = 700,
+                                            N_pre_condition_per_class = 750,
                                             which_study_to_test = "both", 
                                             prior = "wide" 
 ))
@@ -303,7 +303,7 @@ final_output[2, "incorrect inference rate"] = mean(as.logical(out[4,])) # incorr
 out = replicate(iterations, simulation_func(bf_thresholds = c(3, 1/3),
                                             main_inference_method = "method_1", 
                                             true_effect = "null effects", 
-                                            N_pre_condition_per_class = 700,
+                                            N_pre_condition_per_class = 750,
                                             which_study_to_test = "both", 
                                             prior = "wide" 
 ))
