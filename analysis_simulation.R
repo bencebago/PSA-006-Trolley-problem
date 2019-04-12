@@ -165,56 +165,38 @@ simulation_func = function(
     if(true_effect == "a culture replicates only"){
       v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       
     } else if(true_effect == "original effect in all cultures"){
       v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_a = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_b = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_c = mysamp(N_pre_condition_per_class, m=6-(2.19*SMD_Effect_size_study1), s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else if(true_effect == "null effects"){
       v1_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_a = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_b = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
       v1_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       v2_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v3_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
-      v4_c = mysamp(N_pre_condition_per_class, m=6, s=2.19, lwr=1, upr=9, rounding=0)
       
     } else(print("ERROR: No valid effect specified"))
     
     
-    full_data=data.frame(v1_a, v2_a, v3_a, v4_a, v1_b, v2_b, v3_b, v4_b, v1_c, v2_c, v3_c, v4_c)
+    full_data=data.frame(v1_a, v2_a,  v1_b, v2_b, v1_c, v2_c)
     suppressMessages({
       full_data2=melt(full_data, variable.name="code", value.name="choice")
     })
@@ -222,7 +204,7 @@ simulation_func = function(
     code<-"v([1-9]+)_([a-z]+)"
     full_data2$condition=as.integer(sub(code, "\\1", full_data2$code))
     full_data2$class=factor(sub(code, "\\2", full_data2$code))
-    full_data2$condition = factor(full_data2$condition, levels=c(1:4), labels=c("standard", "pole", "switch", "remote"))
+    full_data2$condition = factor(full_data2$condition, levels=c(1:2), labels=c( "pole", "switch"))
     full_data2$study = "study_1"
     full_data2$class_type = "culture"
     
@@ -238,8 +220,7 @@ simulation_func = function(
       
       
       ###personal force: switch vs pole
-      switch_pole_data = subset(data_to_analyze, condition=="pole"|condition=="switch")
-      switch_pole_data$condition = factor(switch_pole_data$condition)
+      switch_pole_data = data_to_analyze
       model4=ttestBF(formula = choice ~ condition, data = switch_pole_data, rscale = prior)
       bf3 = round(as.numeric(matrix(model4)), 3)
       bf = bf3
