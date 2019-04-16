@@ -3,6 +3,7 @@
 # EXAMPLE: generate_dataset(n = 1000, mean = 5, sd = 2, tasks = 4, groups = c("a", "b"))
 
 
+# TODO: add optional parameter to manually specify variable names
 # TODO: add parameters (vars, smd) for variables that should be different
 
 generate_dataset <- function(n, 
@@ -12,19 +13,19 @@ generate_dataset <- function(n,
                              ceiling = 9,
                              tasks = 4, 
                              groups = c("a", "b", "c")){
-  # Gerate  the variable names. Values are added as a list of NA values to be later unnested
+  # Gerate  the variable names
   variables <-
     paste(
       paste("v", 1:tasks, sep = ""),
       rep(groups, each = tasks),
       sep = "_"
     )
-
+  
+  # Create a list of values and cast it into a tibble
   map(variables, 
       ~draw_values(n, mean, sd, floor, ceiling)) %>% 
     set_names(variables) %>% 
-    as_tibble() %>% 
-    gather(code, choice)
+    as_tibble()
 
 }
 
