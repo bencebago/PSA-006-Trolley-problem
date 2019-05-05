@@ -22,7 +22,7 @@ get_bf_inference <- function(df,
                              # Evidence for the alternative and null, respectively
                              bf_thresholds = c(5, 1/5) 
                              ){
-
+  suppressMessages(
   df %>% 
     dplyr::group_nest(!!!syms(groups)) %>%
     dplyr::transmute(!!!syms(groups), 
@@ -35,5 +35,6 @@ get_bf_inference <- function(df,
                      inference = dplyr::case_when(bf > bf_thresholds[1] ~ "replicated",
                                                   bf < bf_thresholds[2] ~ "not replicated",
                                                   TRUE ~ "inconclusive"))
+  )
 }
 
