@@ -2,9 +2,12 @@
 # OUTPUT: A tibble in long format
 # EXAMPLE: generate_dataset(n = 1000, mean = 5, sd = 2, tasks = 4, groups = c("a", "b"))
 
-
 # TODO: add optional parameter to manually specify variable names
 # TODO: add parameters (vars, smd) for variables that should be different
+
+if (!require(purrr)) install.packages("purrr")
+if (!require(dplyr)) install.packages("dplyr")
+source("R/draw_values.R")
 
 generate_dataset <- function(n, 
                              mean, 
@@ -22,10 +25,10 @@ generate_dataset <- function(n,
     )
   
   # Create a list of values and cast it into a tibble
-  map(variables, 
-      ~draw_values(n, mean, sd, floor, ceiling)) %>% 
-    set_names(variables) %>% 
-    as_tibble()
+  purrr::map(variables, 
+             ~draw_values(n, mean, sd, floor, ceiling)) %>% 
+        purrr::set_names(variables) %>% 
+        dplyr::as_tibble()
 
 }
 
@@ -39,12 +42,9 @@ generate_dataset <- function(n,
 # df_test <- generate_dataset(n = 3000, mean = 5.2, sd = 2.19, tasks = 5, groups = c("x", "y", "w", "z"))
 # 
 # df_test %>%
+#   tidyr::gather(code, value) %>% 
 #   dplyr::group_by(code) %>%
-#   tidyr::nest() %>% 
+#   tidyr::nest() %>%
 #   dplyr::mutate(result = purrr::map(data, ~t.test(pull(.x), mu = 5.2) %>%
 #                                            broom::tidy())) %>%
 #   tidyr::unnest(result)
-
- 
-  
- 
