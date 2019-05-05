@@ -14,6 +14,8 @@
 if (!require(dplyr)) install.packages("dplyr")
 if (!require(purrr)) install.packages("purrr")
 if (!require(rlang)) install.packages("rlang")
+if (!require(BayesFactor)) install.packages("BayesFactor")
+
 
 get_bf_inference <- function(df, 
                              groups = c("study", "class"),
