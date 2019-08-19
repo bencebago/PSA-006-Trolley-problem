@@ -14,7 +14,7 @@ draw_values <- function(n, # Number of samples
                         ceiling = 9 # Maximum value
 ){
   
-  base::sample(floor:ceiling,
+  base::sample.int(floor:ceiling,
                size = n, 
                replace = TRUE,
                # Use truncated normal distribution
