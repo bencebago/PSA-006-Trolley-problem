@@ -5,7 +5,7 @@
 # OUTPUT: a vector of n random values
 # EXAMPLE: draw_values(n = 10000, mean = 5, sd = 2, floor = 1, ceiling = 9)
 
-if(!require(msm)) install.packages("msm")
+if (!require(msm)) install.packages("msm")
 
 draw_values <- function(n, # Number of samples 
                         mean, # population mean
@@ -14,11 +14,16 @@ draw_values <- function(n, # Number of samples
                         ceiling = 9 # Maximum value
 ){
   
-  base::sample.int(floor:ceiling,
-               size = n, 
-               replace = TRUE,
-               # Use truncated normal distribution
-               prob = msm::dtnorm(floor:ceiling, mean, sd, floor, ceiling)
+  base::sample.int(
+                     n = ceiling,
+                     size = n, 
+                     replace = TRUE,
+                     # Use truncated normal distribution
+                     prob = msm::dtnorm(x = floor:ceiling, 
+                                        mean = mean, 
+                                        sd = sd, 
+                                        lower = floor, 
+                                        upper = ceiling)
   )
 }
 
