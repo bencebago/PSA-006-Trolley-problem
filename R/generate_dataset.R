@@ -7,7 +7,7 @@
 
 if (!require(purrr)) install.packages("purrr")
 if (!require(dplyr)) install.packages("dplyr")
-source("R/draw_values.R")
+source(here::here("R/draw_values.R"))
 
 generate_dataset <- function(n, 
                              mean, 
