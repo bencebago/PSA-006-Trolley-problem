@@ -1,6 +1,7 @@
 # For testing
 library(tidyverse)
 library(furrr)
+library(tictoc)
  
 source(here::here("R/simulate.R"))
 source(here::here("R/aggregate_inferences.R"))
@@ -8,81 +9,82 @@ source(here::here("R/aggregate_inferences.R"))
 # Set up multicore processing
 plan(multisession(workers = availableCores() - 1))
 
-samples <- 100
-sample_sizes_to_test <- seq(200, 2000, 200)
-which_study_to_test <- c("study_1", "study_2", "both")
+samples <- 10
+true_effect <- c("original effect in all cultures", "null effects")
 bf_threshold_to_use <- 10
-effect_size <- c(0.23, 0.3, 0.46)
+effect_size1 <- c(0.23, 0.30) 
+effect_size2 <- c(0.28, 0.37) 
+sample_sizes_to_test1 <- seq(600, 1000, 100)
+sample_sizes_to_test2 <- seq(1500, 2000, 100)
 # The prior should be equal to the es
 class_names = c("a", "b", "c")
 class_mean = 6
 class_sd = 2.19
 
-combinations <-
-                crossing(sample = 1:samples, 
-                         sample_sizes_to_test, 
-                         which_study_to_test,
-                         effect_size
-                )
+combinations1 <-
+  crossing(
+    study = "study_1",
+    true_effect,
+    effect_size = effect_size1,
+    sample_size = sample_sizes_to_test1,
+    sample = 1:samples
+  )
 
+combinations2 <-
+  crossing(study = "study_2",
+           true_effect,
+           effect_size = effect_size2,
+           sample_size = sample_sizes_to_test2,
+           sample = 1:samples
+  )
+
+combinations <- bind_rows(combinations1, combinations2)
+
+tic()
 out <-
   combinations %>% 
   as.list() %>% 
-  future_pmap(~simulate( 
-                        n_per_cell = ..2,
-                        which_study_to_test = ..3, 
+  future_pmap(~simulate(
+                        study = ..1,
+                        true_effect = ..2,
+                        mean_difference = ..3 * class_sd,
+                        n_per_cell = ..4,
                         bf_thresholds = c(bf_threshold_to_use, 
                                           1/bf_threshold_to_use),
                         class_mean = class_mean,
                         class_sd = class_sd,
-                        mean_difference = ..4 * class_sd, 
                         class_names = c("a", "b", "c"),
                         # Prior should be the same as the ES
-                        prior = ..4),
+                        prior = ..3),
               .progress = TRUE)
+toc()
 
 results <-
-  bind_cols(combinations, 
-            map_dfr(out, 
-                    ~enframe(.x, name = NULL) %>% 
-                     t() %>% 
-                     as_tibble())) %>% 
-  dplyr::select(sample:effect_size,
-                correct_inference_rate = V3,
-                incorrect_inference_rate = V4) %>% 
-  # dplyr::mutate(sample_size_per_class = as.numeric(sample_size_per_class)) %>%
-  dplyr::group_by(sample_sizes_to_test, which_study_to_test, effect_size) %>% 
-  dplyr::summarise(correct_inference_rate = mean(as.logical(correct_inference_rate)),
-                   incorrect_inference_rate = mean(as.logical(incorrect_inference_rate))
-  ) %>% 
-  dplyr::ungroup() %>% 
-  gather(inference, p, -sample_sizes_to_test, -which_study_to_test, -effect_size)
+  aggregate_inferences(combinations = combinations, out_list = out) %>% 
+  gather(inference, p, -study, -true_effect, -sample_size, -effect_size)
 
-
-# Get result table
-results <-
-  out %>% 
-  aggregate_inferences() %>% 
-  gather(inference, p, -sample_size_per_class, -study)
 
 # Visualize
 
 theme_set(theme_light())
 
 results %>% 
+  filter(study == "study_2") %>% 
   ggplot() +
-  aes(x = sample_sizes_to_test, y = p, color = inference) +
-  geom_line(size = 1.1) +
+  aes(x = sample_size, y = p, color = inference) +
+  geom_line(size = 1.1, alpha = .7) +
   # geom_point(size = 2) +
   scale_y_continuous(labels = scales::percent_format()) +
   geom_hline(yintercept = c(.05, .95), linetype = "dashed") +
-  facet_grid(which_study_to_test~effect_size, labeller = "label_both") +
+  facet_grid(true_effect ~ effect_size, labeller = "label_both") +
   labs(title = str_glue("Correct and incorrect inference rate for different sample sizes for {samples} samples"),
        subtitle = "Dashed lines represent 5% and 95% probability",
        x = "Sample size per class",
        y = NULL) +
   theme(legend.position = "bottom") +
-  # coord_cartesian(ylim = c(.90, 1)) +
   NULL
 
-# write_csv(results, "simulation_10k.csv")
+
+
+# write_csv(results_table, "simulation_10k.csv")
+
