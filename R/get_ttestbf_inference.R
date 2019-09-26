@@ -23,18 +23,20 @@ get_ttestbf_inference <- function(df,
                              bf_thresholds = c(10, 1/10) 
                              ){
   suppressMessages(
-  df %>% 
-    dplyr::group_nest(!!!syms(groups)) %>%
-    dplyr::transmute(!!!syms(groups), 
-                     bf = purrr::map_dbl(data, 
-                                         ~BayesFactor::ttestBF(formula = formula, 
-                                                               nullInterval = c(0, Inf),
-                                                               rscale = prior, 
-                                                               data = as.data.frame(.x)) %>% 
-                                          BayesFactor::extractBF(onlybf = TRUE)),
-                     inference = dplyr::case_when(bf > bf_thresholds[1] ~ "replicated",
-                                                  bf < bf_thresholds[2] ~ "not replicated",
-                                                  TRUE ~ "inconclusive"))
+    df %>% 
+      dplyr::group_nest(!!!syms(groups)) %>%
+      dplyr::transmute(!!!syms(groups), 
+                       bf = purrr::map(data, 
+                                       ~BayesFactor::ttestBF(formula = formula, 
+                                                             nullInterval = c(0, Inf),
+                                                             rscale = prior, 
+                                                             data = as.data.frame(.x)) %>% 
+                                         BayesFactor::extractBF(onlybf = TRUE)) %>% 
+                         # Get the second BF of the two
+                         map_dbl(2),
+                       inference = dplyr::case_when(bf > bf_thresholds[1] ~ "replicated",
+                                                    bf < bf_thresholds[2] ~ "not replicated",
+                                                    TRUE ~ "inconclusive"))
   )
 }
 
