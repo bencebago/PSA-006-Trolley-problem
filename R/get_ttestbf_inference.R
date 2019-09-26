@@ -28,6 +28,7 @@ get_ttestbf_inference <- function(df,
     dplyr::transmute(!!!syms(groups), 
                      bf = purrr::map_dbl(data, 
                                          ~BayesFactor::ttestBF(formula = formula, 
+                                                               nullInterval = c(0, Inf),
                                                                rscale = prior, 
                                                                data = as.data.frame(.x)) %>% 
                                           BayesFactor::extractBF(onlybf = TRUE)),
