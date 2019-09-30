@@ -119,13 +119,14 @@ simulate = function(
   output_table_merged <- bind_rows(output_table_list)
   
   all_inference_correct = all(output_table_merged[,"inference"] == correct_inferences)
-  any_inference_incorrect = any(output_table_merged[,"inference"] == incorrect_inferences)
+  # any_inference_incorrect = any(output_table_merged[,"inference"] == incorrect_inferences)
   
   
   return(c(
            # true_effect, 
            # n_per_cell, 
            # study,
-           all_inference_correct, 
-           any_inference_incorrect))
+           all_inference_correct 
+           # any_inference_incorrect
+           ))
 }

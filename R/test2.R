@@ -7,14 +7,14 @@ source(here::here("R/simulate.R"))
 source(here::here("R/aggregate_inferences.R"))
 
 # Set up multicore processing
-plan(multisession(workers = availableCores() - 1))
+plan(multisession(workers = availableCores()))
 
-samples <- 10
+samples <- 100
 true_effect <- c("original effect in all cultures", "null effects")
 bf_threshold_to_use <- 10
 effect_size1 <- c(0.23, 0.30) 
 effect_size2 <- c(0.28, 0.37) 
-sample_sizes_to_test1 <- seq(600, 1000, 100)
+sample_sizes_to_test1 <- seq(1500, 2500, 250)
 sample_sizes_to_test2 <- seq(1500, 2000, 100)
 # The prior should be equal to the es
 class_names = c("a", "b", "c")

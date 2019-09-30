@@ -17,11 +17,12 @@ aggregate_inferences <- function(combinations, out_list){
                            t() %>% 
                            tibble::as_tibble()) %>%
     dplyr::rename(correct_inference_rate = 1,
-                  incorrect_inference_rate = 2) %>% 
+                  # incorrect_inference_rate = 2
+                  ) %>% 
     dplyr::bind_cols(combinations, .) %>% 
     dplyr::group_by(!!!syms(names(select(combinations, -sample)))) %>% 
     dplyr::summarise(correct_inference_rate = mean(as.logical(correct_inference_rate)),
-                     incorrect_inference_rate = mean(as.logical(incorrect_inference_rate))
+                     # incorrect_inference_rate = mean(as.logical(incorrect_inference_rate))
                      ) %>% 
     dplyr::ungroup()
 }
