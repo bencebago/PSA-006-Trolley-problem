@@ -4,31 +4,39 @@ library(tidyverse)
 library(qualtRics)
 
 # Read the API key from a file. The file should not be on github.
-# qualtrics_api_key <- read_lines("qualtrics_api_key.txt")
-# 
-# qualtrics_api_credentials(api_key = qualtrics_api_key, 
-#                           base_url = "https://lapsyde.eu.qualtrics.com")
-# 
-# qualtRics::fetch_survey(surveyID = "SV_0N8LUtb9tTQHJTn",
-#                         include_display_order = TRUE
-#                         )
+# This is just a text file with one line, that is the API key.
+qualtrics_api_key <- read_lines("meta_data/qualtrics_api_key.txt")
 
-# Read file manually for being able to do the cleaning script
+# Read survey_id data
+qualtrics_survey_ids <- 
+  read_csv("meta_data/qualtrics_surveys.csv") %>% 
+  filter(survey_name != "PSA006_master")    
 
-trolley_raw <- qualtRics::read_survey("data/PSA006_Southern_March+7,+2020_15.32.csv")
-correct_answers <- read_csv("data/correct_answers.csv")
+# Correct answers for attention check
+correct_answers <- read_csv("meta_data//correct_answers.csv")
 
+qualtrics_api_credentials(api_key = qualtrics_api_key,
+                          base_url = "https://lapsyde.eu.qualtrics.com")
+
+# Read data from all Qualtrics surveys and merge them into one tibble
+trolley_raw <- 
+  qualtrics_survey_ids %>% 
+  mutate(data = map(survey_id ,~fetch_survey(surveyID = .x,
+                                 include_display_order = TRUE,
+                                 force_request = TRUE))) %>% 
+  filter(str_detect(survey_name, "Southern")) %>% 
+  unnest(data)
+  
 glimpse(trolley_raw)
-
+  
 # TODO: 
 # Only Native speakers should be kept
-
 
 trolley <-
   trolley_raw %>% 
   # Rename randomization variables
-  rename(scenario1 = FL_24_DO, 
-         scenario2 = FL_22_DO) %>%
+  # rename(scenario1 = FL_24_DO, 
+  #        scenario2 = FL_22_DO) %>%
   # Remove those who didn't finish the questionnaire
   filter(Progress == 100) %>% 
   # Remove underage participants
