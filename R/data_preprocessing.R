@@ -2,6 +2,7 @@
 
 library(tidyverse)
 library(qualtRics)
+library(jsonlite)
 
 # Read the API key from a file. The file should not be on github.
 # This is just a text file with one line, that is the API key.
@@ -12,8 +13,8 @@ qualtrics_survey_ids <-
   read_csv("meta_data/qualtrics_surveys.csv") %>% 
   filter(survey_name != "PSA006_master")    
 
-# Correct answers for attention check
-correct_answers <- read_csv("meta_data//correct_answers.csv")
+# Correct answers for attention check for the tasks
+correct_answers <- read_csv("meta_data/correct_answers.csv")
 
 qualtrics_api_credentials(api_key = qualtrics_api_key,
                           base_url = "https://lapsyde.eu.qualtrics.com")
@@ -21,16 +22,16 @@ qualtrics_api_credentials(api_key = qualtrics_api_key,
 # Read data from all Qualtrics surveys and merge them into one tibble
 trolley_raw <- 
   qualtrics_survey_ids %>% 
-  mutate(data = map(survey_id ,~fetch_survey(surveyID = .x,
-                                include_display_order = TRUE,
-                                force_request = TRUE))) %>% 
+  mutate(data = map(survey_id ,~fetch_survey( surveyID = .x,
+                                              include_display_order = TRUE,
+                                              force_request = TRUE, 
+                                              label = FALSE,
+                                              convert = FALSE))) %>% 
   unnest(data)
   
 glimpse(trolley_raw)
   
-# TODO: 
-# Only Native speakers should be kept
-
+# Proces data
 trolley <-
   trolley_raw %>% 
   # Aggregate randomization variables
@@ -43,21 +44,46 @@ trolley <-
                                FL_22_DO_Obstaclecollide == 1 ~ "Obstaclecollide",
                                TRUE ~ NA_character_)) %>% 
   # Remove those who didn't finish the questionnaire
-  filter(Progress == 100) %>% 
+  filter(Progress >= 98) %>% 
   # Exclude careless responders
-  filter_at(vars(careless_1, careless_2), all_vars(. != "Yes")) %>%
-  filter(careless_3 != "No") %>%
+  filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
+  filter(careless_3 != 2) %>%
   # Remove confused participants 
-  filter(confusion != "By the time I answered the questions on the preceding page, I was still somewhat confused by the material.  I do not think I understood this material well enough to give reasonable answers to the questions I was asked.") %>%
+  filter(confusion != 3) %>%
   # Exclude those with familiarity of the topic
   filter(familiarity <= 3) %>% 
-  # Exclude those who wrote letter to the technical prolems field. This shold be improved after we see the data (e.g. answers such as "No" shouldn't be excluded)
-  filter(is.na(str_match(technical_problems, "[a-zA-Z ]+"))) %>% 
+  # Technical problems is not in the master questionnaire!
+  filter(technical_problems != 1) %>% 
+  # Exclude those who did not fill the questionnaire on their native language
+  filter(native_language != 2) %>% 
   # Remove those who can't tell which scenarios they saw
-  left_join(correct_answers, by = "scenario1") %>%
-  filter(trolley_attention == trolley_answer) %>% 
+  left_join(correct_answers, by = "scenario1") %>% 
+  # Use the correct answer descriptions as attention check for the tasks
+  # Only those are kept who answered to either of the tasks correctly
+  filter(trolley_attention == trolley_answer | speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
 
+# Questionnaire structure processing ------------------------------------------------
+# This creates a codebook for the answer, based on the master questionnaire
+# Read the master 
+master <- read_json("questionnaire_structure/PSA006_master.qsf")
 
+answer_options <-
+  tibble(q = master$SurveyElements) %>% 
+  # Rectagle list data
+  hoist(q, 
+        qid = c("Payload", "DataExportTag"),
+        question_text = c("Payload", "QuestionText"),
+        answer = c("Payload", "Choices")) %>% 
+  unnest_longer(answer) %>% 
+  hoist(answer, answer_label = "Display") %>% 
+  drop_na(qid) %>% 
+  # Take out the html from question text
+  mutate(question_text = str_remove_all(question_text, "<[^>]*>")) %>%
+  select(-q, -answer, answer_value = answer_id) %>%
+  # Take out the consent questions
+  # filter(!str_detect(qid, "consent")) %>% 
+  arrange(qid)
+  
   
