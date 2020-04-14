@@ -55,14 +55,14 @@ trolley <-
   # Exclude those with familiarity of the topic
   filter(familiarity <= 3) %>% 
   # Technical problems is not in the master questionnaire!
-  filter(technical_problems != 1) %>% 
+  filter(technical_problems != 2) %>% 
   # Exclude those who did not fill the questionnaire on their native language
   filter(native_language != 2) %>% 
   # Remove those who can't tell which scenarios they saw
   left_join(correct_answers, by = "scenario1") %>% 
   # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered to either of the tasks correctly
-  filter(trolley_attention == trolley_answer | speedboat_attention == speedboat_answer) %>%
+  filter(trolley_attention == trolley_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
 
@@ -88,4 +88,6 @@ answer_options <-
   # filter(!str_detect(qid, "consent")) %>% 
   arrange(qid)
   
+# Print all questions and answer options
+print(answer_options, n = 500)
   
