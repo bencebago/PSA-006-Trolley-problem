@@ -45,6 +45,8 @@ trolley <-
                                TRUE ~ NA_character_)) %>% 
   # Remove those who didn't finish the questionnaire
   filter(Progress >= 98) %>% 
+  # Remove all practice runs
+  filter(!practice) %>% 
   # Exclude careless responders
   filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
   filter(careless_3 != 2) %>%
