@@ -26,7 +26,8 @@ trolley_raw <-
                                               include_display_order = TRUE,
                                               force_request = TRUE, 
                                               label = FALSE,
-                                              convert = FALSE))) %>% 
+                                              convert = FALSE) %>% 
+                                mutate(practice = as.character(practice)))) %>% 
   unnest(data)
   
 glimpse(trolley_raw)
@@ -46,7 +47,7 @@ trolley <-
   # Remove those who didn't finish the questionnaire
   filter(Progress >= 98) %>% 
   # Remove all practice runs
-  filter(!practice) %>% 
+  filter(practice == "false") %>% 
   # Exclude careless responders
   filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
   filter(careless_3 != 2) %>%
@@ -62,8 +63,8 @@ trolley <-
   left_join(correct_answers, by = "scenario1") %>% 
   # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered to either of the tasks correctly
-  filter(trolley_attention == trolley_answer) %>%
-  select(-trolley_answer, -speedboat_answer)
+  filter(trolley_attention == trolley_answer) %>% 
+  select(-trolley_answer, -speedboat_answer) 
 
 
 # Questionnaire structure processing ------------------------------------------------
@@ -91,3 +92,16 @@ answer_options <-
 # Print all questions and answer options
 print(answer_options, n = 500)
   
+
+
+# Monitor the number of tests per lab -----------------------------------------------
+# Number of participants that started the questionnaire
+trolley_raw %>% 
+  count(lab, sort = TRUE) %>% 
+  print(n = 500)
+
+# Number of included participants
+trolley %>%
+  count(lab, sort = TRUE) %>% 
+  print(n = 500)
+
