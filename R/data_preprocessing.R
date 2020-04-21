@@ -3,6 +3,7 @@
 library(tidyverse)
 library(qualtRics)
 library(jsonlite)
+library(lubridate)
 
 # Read the API key from a file. The file should not be on github.
 # This is just a text file with one line, that is the API key.
@@ -64,7 +65,9 @@ trolley <-
   # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered to either of the tasks correctly
   filter(trolley_attention == trolley_answer) %>% 
-  select(-trolley_answer, -speedboat_answer) 
+  select(-trolley_answer, -speedboat_answer) %>% 
+  # Remove the answers for a particular lab that has unflagged practice data
+  filter(lab == "TUR_021" & StartDate < date("2020-04-22"))
 
 
 # Questionnaire structure processing ------------------------------------------------
