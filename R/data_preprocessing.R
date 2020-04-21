@@ -48,7 +48,7 @@ trolley <-
   # Remove those who didn't finish the questionnaire
   filter(Progress >= 98) %>% 
   # Remove all practice runs
-  filter(practice == "false") %>% 
+  filter(str_detect(str_to_lower(practice), "false")) %>% 
   # Exclude careless responders
   filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
   filter(careless_3 != 2) %>%
@@ -67,7 +67,7 @@ trolley <-
   filter(trolley_attention == trolley_answer) %>% 
   select(-trolley_answer, -speedboat_answer) %>% 
   # Remove the answers for a particular lab that has unflagged practice data
-  filter(lab == "TUR_021" & StartDate < date("2020-04-22"))
+  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")))
 
 
 # Questionnaire structure processing ------------------------------------------------
