@@ -1,0 +1,12 @@
+name: psa_moral_progress
+title: psa_moral_progress
+username:
+account: martonbalazskovacs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2171936
+bundleId: 3059865
+url: https://martonbalazskovacs.shinyapps.io/psa_moral_progress/
+when: 1587738032.84807
+asMultiple: FALSE
+asStatic: FALSE
