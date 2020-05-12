@@ -1,0 +1,25 @@
+---
+title: ""
+output: html_document
+---
+
+### What can you see in the table?
+
+The app downloads the responses from Qualtrics on load. If you click on the "Refresh" button it downloads the responses again.
+
+Each column of the table contains the number of eligible participants after the application of a new exclusion criteria in addition to the ones applied before.
+
+You can find out more about the exclusion criteria in the [paper](https://psyarxiv.com/9uaqm/)
+
+You can find the questions that these exclusion criterias are based on in the Supplementary [materials](https://osf.io/z3v6f/)
+
+### Columns:
+
+1. __N started:__ Number of all the participants who started the survey expect the _practice runs_
+2. __N finished:__ Number of participants after excluding the respondents who _did not finish the survey_, and the _practice runs_
+3. __N careless:__ Number of participants after excluding the respondents who _answered incorrectly to the three bogus items_ and all exclusion criteia above applied
+4. __N confused:__ Number of participants after excluding the respondents who _found the materials confusing_ and all exclusion criteia above applied
+5. __N familiarity:__ Number of participants after excluding the respondents who were _familiar with the task_ and all exclusion criteia above applied
+6. __N technical problem:__ Number of participants after excluding the respondents who _had technical problems_ and all exclusion criteia above applied
+7. __N not native language:__ Number of participants after excluding the respondents who _did not fill out the survey in their native language_ and all exclusion criteia above applied
+8. __N scenarios:__ Number of participants after excluding the respondents who _can't tell which scenarios they saw_ and all exclusion criteia above applied
