@@ -23,3 +23,5 @@ You can find the questions that these exclusion criterias are based on in the Su
 6. __N technical problem:__ Number of participants after excluding the respondents who _had technical problems_ and all exclusion criteia above applied
 7. __N not native language:__ Number of participants after excluding the respondents who _did not fill out the survey in their native language_ and all exclusion criteia above applied
 8. __N scenarios:__ Number of participants after excluding the respondents who _can't tell which scenarios they saw_ and all exclusion criteia above applied
+
+_Note:_ The number of participants includes participants from Study1 and Study2 as well. Therefore, the resulting number in the last column shows the number of participants who are eligible for analysis after all the exclusions for both of the studies summarized.

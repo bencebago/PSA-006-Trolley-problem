@@ -1,3 +1,7 @@
-"scenario1", "trolley_answer", "speedboat_answer"
-"Switch", 3, 2
-"Pole", 2, 1
+scenario1,scenario2,trolley_answer,speedboat_answer
+Switch,,3,2
+Pole,,2,1
+,Standardswitch,4,3
+,Standardfootbridge,1,4
+,Loop,5,2
+,Obstaclecollide,6,5

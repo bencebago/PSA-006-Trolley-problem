@@ -18,7 +18,7 @@ mod_read_data_server <- function(id) {
       h4("The dataset is loading! It takes a few seconds!")), color = "#b2dcce")
     
     # This is just a text file with one line, that is the API key.
-    qualtrics_api_key <- read_lines("qualtrics_api_key.txt")
+    qualtrics_api_key <- read_lines(here::here("qualtrics_api_key.txt"))
     
     # Read survey_id data
     qualtrics_survey_ids <- 
@@ -55,7 +55,7 @@ mod_read_data_server <- function(id) {
                                      FL_22_DO_Loop == 1 ~ "Loop",
                                      FL_22_DO_Obstaclecollide == 1 ~ "Obstaclecollide",
                                      TRUE ~ NA_character_)) %>%
-        filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")))
+        filter(!(lab == "TUR_021" & StartDate < lubridate::date("2020-04-22")))
       
       w$hide()
       

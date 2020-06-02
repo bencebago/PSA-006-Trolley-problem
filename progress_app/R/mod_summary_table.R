@@ -59,7 +59,7 @@ mod_summary_table_server <- function(id, input_data_raw) {
       scenario <- 
         native %>%  
         # Remove those who can't tell which scenarios they saw
-        left_join(correct_answers, by = "scenario1") %>% 
+        left_join(correct_answers, by = c("scenario1", "scenario2")) %>% 
         filter(trolley_attention == trolley_answer)
       
       started %>%
