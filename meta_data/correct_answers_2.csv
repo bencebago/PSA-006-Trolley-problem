@@ -1,0 +1,5 @@
+scenario2,"trolley_answer","speedboat_answer"
+"Standardswitch",4,3
+"Standardfootbridge",1,4
+"Loop",5,2
+"Obstaclecollide",6,5
