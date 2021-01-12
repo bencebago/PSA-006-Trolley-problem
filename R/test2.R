@@ -9,7 +9,7 @@ source(here::here("R/aggregate_inferences.R"))
 # Set up multicore processing
 plan(multisession(workers = availableCores()))
 
-samples <- 100
+samples <- 20
 true_effect <- c("original effect in all cultures", "null effects")
 bf_threshold_to_use <- 10
 effect_size1 <- c(0.23, 0.30) 
