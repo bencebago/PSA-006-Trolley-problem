@@ -36,9 +36,14 @@ trolley_raw <-
   unnest(data)
   
 glimpse(trolley_raw)
+# write_csv(trolley_raw, "data/trolley_raw.csv")
 
-# Process data
-trolley <-
+
+
+# Process data -----------------------------------------------------------------
+trolley_raw <- read_csv("data/trolley_raw.csv")
+
+trolley_proc <-
   trolley_raw %>% 
   # Aggregate randomization variables
   mutate(scenario1 = case_when(FL_24_DO_Footbridgepole == 1 ~ "Pole",
@@ -53,6 +58,13 @@ trolley <-
   filter(Progress >= 98) %>% 
   # Remove all practice runs
   filter(str_detect(str_to_lower(practice), "false")) %>% 
+  # Remove the answers for a particular lab that has unflagged practice data
+  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")) &
+         !(lab == "AUT_003" & StartDate < date("2020-06-18")) &
+         !(lab == "USA_095"))
+
+trolley <-
+  trolley_proc %>% 
   # Exclude careless responders
   filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
   filter(careless_3 != 2) %>%
@@ -63,32 +75,42 @@ trolley <-
   # Technical problems is not in the master questionnaire!
   filter(technical_problems != 2) %>% 
   # Exclude those who did not fill the questionnaire on their native language
-  filter(native_language != 2) %>% 
-  # Remove the answers for a particular lab that has unflagged practice data
-  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")) &
-         !(lab == "AUT_003" & StartDate < date("2020-06-18")))
+  filter(native_language != 2)
 
 
 # Remove those who can't tell which scenarios they saw
-trolley1 <- 
+study1a <- 
   trolley %>% 
   left_join(correct_answers_1, by = "scenario1") %>% 
   # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
-  filter(trolley_attention == trolley_answer) %>% 
-  filter(speedboat_attention == speedboat_answer) %>% 
+  filter(trolley_attention == trolley_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
+
+study1b <- 
+  trolley %>% 
+  left_join(correct_answers_1, by = "scenario1") %>% 
+  # Use the correct answer descriptions as attention check for the tasks
+  # Only those are kept who answered either of the tasks correctly
+  filter(speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
 # Remove those who can't tell which scenarios they saw
-trolley2 <-
+study2a <-
   trolley %>% 
   left_join(correct_answers_2, by = "scenario2") %>% 
   # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
-  filter(trolley_attention == trolley_answer) %>% 
-  filter(speedboat_attention == speedboat_answer) %>% 
+  filter(trolley_attention == trolley_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
+study2b <-
+  trolley %>% 
+  left_join(correct_answers_2, by = "scenario2") %>% 
+  # Use the correct answer descriptions as attention check for the tasks
+  # Only those are kept who answered either of the tasks correctly
+  filter(speedboat_attention == speedboat_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
 
 # Questionnaire structure processing ------------------------------------------------
 # This creates a codebook for the answer, based on the master questionnaire
@@ -115,24 +137,12 @@ answer_options <-
 # Print all questions and answer options
 print(answer_options, n = 500)
   
+answer_options %>% 
+  filter(str_detect(qid, "sex|education_leve|^age")) %>% view()
 
+answer_options %>% 
+  filter(qid == "education_level_germ")
 
-# Monitor the number of tests per lab -----------------------------------------------
-# Number of participants that started the questionnaire
-trolley_raw %>% 
-  count(lab, sort = TRUE) %>% 
-  print(n = 500)
-
-# Number of included participants
-trolley %>%
-  count(lab, sort = TRUE) %>% 
-  print(n = 500)
-
-trolley %>%
-  nrow()
-
-trolley_raw %>% 
-  filter(lab == "DEU_004") %>% 
-  filter(str_detect(str_to_lower(practice), "false")) %>% 
-  write_excel_csv("data/DEU_004.csv")
-
+trolley_proc %>% 
+  filter(lab == "GBR_020") %>% 
+  write_csv("data_GBR_020.csv")
