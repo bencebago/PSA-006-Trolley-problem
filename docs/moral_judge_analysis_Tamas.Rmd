@@ -1,0 +1,184 @@
+---
+title: "Demographics"
+author: "Tamas Nagy"
+date: "11/3/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(janitor)
+library(countrycode)
+library(gt)
+
+```
+
+# Get individualism scores
+
+```{r}
+
+cd_raw <- read_csv(here::here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
+
+cd <- 
+  cd_raw %>% 
+  transmute(country = names(.),
+            Collectivism = `United States2010-2014`) %>% 
+  extract(country, 
+          into = c("Country", "distance_year"), 
+          regex = "(.*)(\\d{4}-\\d{4})") %>% 
+  # Get the latest similarity data
+  group_by(Country) %>% 
+  slice_tail(n = 1) %>% 
+  ungroup() %>% 
+  # USA should have 0 distance (not NA)
+  mutate(Collectivism = if_else(is.na(Collectivism), 0, Collectivism),
+         country3 = countryname(sourcevar = Country, 
+                                destination = "iso3c")) 
+
+# Viualize collectivism
+cd %>% 
+  mutate(country = fct_reorder(Country, Collectivism)) %>% 
+  ggplot() +
+  aes(x = Collectivism, y = country) +
+  geom_point() +
+  labs(title = "Cultural distance from the USA in collectivism",
+       subtitle = "Data from culturaldistance.com, using the latest measurement for each country and its distance from USA 2010-2014 data  in Interdependence (collectivism)",
+       y = NULL,
+       x = "Distance from the US in collectivism") +
+  theme_light()
+
+
+
+```
+
+# Create processing functions
+
+We need to run the same steps on 4 different datasets, therefore we should make functions that we can run on each dataset and different grouping.
+
+```{r functions}
+
+custom_countries <- 
+  c("LEB" = "LBN", 
+    "BUL" = "BGR", 
+    "SPA" = "ESP", 
+    "SWT" = "CHE")
+
+# Function to process the data
+process_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    transmute(id = ResponseId,
+            country3 = str_extract(lab, "[A-Z]+") %>% 
+            # Some country codes are not standard iso codes; replace
+                      recode(., !!!custom_countries),
+            Region = str_remove(survey_name, "PSA006_"),
+            # Age is a multiple choice question that starts at 18
+            Age = age_1 + 17,
+            Gender = sex,
+            edu_high = education_leve > 2,
+            # Higher education is recorded differently in German
+            edu_high_ger = education_level_germ > 4,
+            `Higher education` = case_when(country3 %in% c("AUT", "DEU") ~ edu_high_ger,
+                                  TRUE ~ edu_high)) %>% 
+    select(-edu_high, -edu_high_ger)
+}
+
+# Function to summarise studies into variables
+summarise_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    summarise(N = n(),
+            `Age Mean` = mean(Age, na.rm = TRUE),
+            `Age SD` = sd(Age, na.rm = TRUE),
+            `Male %` = mean(Gender == 1, na.rm = TRUE),
+            `Higher education %` = mean(`Higher education`, 
+                                        na.rm = TRUE),
+            .groups = "drop")
+  
+}
+
+# Function to create the publication ready table
+create_table <- function(data = NULL){
+  data %>% 
+  relocate(Country, .before = country3) %>% 
+  select(-country3, -distance_year) %>% 
+  gt(groupname_col = "data", 
+     rowname_col = "Region") %>%
+  fmt_number(columns = vars(`Age Mean`, `Age SD`),
+             decimals = 1) %>% 
+  tab_spanner(columns = vars(data), label = "Region") %>%
+  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
+             pattern = "{1} ({2})") %>% 
+  fmt_number(columns = vars(Collectivism),
+             decimals = 3) %>% 
+  fmt_percent(columns = vars(`Male %`, `Higher education %`),
+              decimals = 1) %>% 
+  fmt_missing(vars(Country, Collectivism, Region, data, `Higher education %`, `Male %`, `Age SD`)) %>% 
+  cols_label(`Age Mean` = "Age (SD)") %>% 
+  tab_footnote(
+    footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
+    locations = cells_column_labels(columns = vars(Collectivism))
+  ) %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999", 
+              )
+  
+}
+  
+
+```
+
+
+
+```{r}
+
+summaries <-
+  # Get data
+  tibble(study = c("study1a", "study1b", "study2a", "study2b"), 
+         data = list(study1a, study1b, study2a, study2b)) %>% 
+  # Process and summarise data on 3 levels (country, region, all)
+  mutate(proc_data = map(data, process_study),
+         country_sum = map(proc_data, ~group_by(.x, Region, country3) %>% 
+                                       summarise_study() %>% 
+                                       left_join(cd, by = "country3") %>% 
+                                       add_column(data = "By country", .before = 1) %>% 
+                                       mutate(Country = countrycode(sourcevar = country3, 
+                                                              origin = "iso3c",
+                                                              destination = "country.name")) %>% 
+                               arrange(Region, Country)),
+         region_sum = map(proc_data, ~group_by(.x, Region) %>% 
+                                       summarise_study() %>% 
+                            add_column(data = "By region", .before = 1) %>% 
+                            arrange(Region)),
+         all_sum =map(proc_data, ~summarise_study(.x) %>% 
+                        add_column(data = "All", .before = 1) %>% 
+                        mutate(Region = "All")),
+         # Add the 3 level summaries into one dateset
+         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
+         # Generate the tables
+         gtable = map(bind_sum, create_table))
+
+
+# Verify
+summaries$gtable[[1]]
+summaries$gtable[[2]]
+summaries$gtable[[3]]
+summaries$gtable[[4]]
+
+# TODO: Iran higher education? it seems to be NA
+# Make summaries using the gt summary functions instead of binding rows
+
+
+
+
+```
+
