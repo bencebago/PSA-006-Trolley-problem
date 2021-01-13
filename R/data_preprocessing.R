@@ -75,22 +75,20 @@ trolley <-
   # Technical problems is not in the master questionnaire!
   filter(technical_problems != 2) %>% 
   # Exclude those who did not fill the questionnaire on their native language
-  filter(native_language != 2)
-
+  filter(native_language != 2) %>% 
+  # Use the correct answer descriptions as attention check for the tasks
+  left_join(correct_answers_1, by = "scenario1") %>% 
+  left_join(correct_answers_2, by = "scenario2")
 
 # Remove those who can't tell which scenarios they saw
 study1a <- 
   trolley %>% 
-  left_join(correct_answers_1, by = "scenario1") %>% 
-  # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
   filter(trolley_attention == trolley_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
 study1b <- 
   trolley %>% 
-  left_join(correct_answers_1, by = "scenario1") %>% 
-  # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
   filter(speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
@@ -98,16 +96,12 @@ study1b <-
 # Remove those who can't tell which scenarios they saw
 study2a <-
   trolley %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
   filter(trolley_attention == trolley_answer) %>%
   select(-trolley_answer, -speedboat_answer)
 
 study2b <-
   trolley %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  # Use the correct answer descriptions as attention check for the tasks
   # Only those are kept who answered either of the tasks correctly
   filter(speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
