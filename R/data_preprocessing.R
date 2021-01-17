@@ -32,6 +32,8 @@ trolley_proc <-
          !(lab == "AUT_003" & StartDate < date("2020-06-18")),
          !(lab == "USA_095"))
 
+# write_csv(trolley_proc, "data/trolley_preprocessed.csv")
+
 # Exclude participants specified in the preregistration
 trolley <-
   trolley_proc %>% 
@@ -46,8 +48,6 @@ trolley <-
   filter(technical_problems != 2) %>% 
   # Exclude those who did not fill the questionnaire on their native language
   filter(native_language != 2)
-
-
 
 # Remove those who can't tell which scenarios they saw
 # Use the correct answer descriptions as attention check for the tasks
