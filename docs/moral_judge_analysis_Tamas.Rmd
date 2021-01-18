@@ -49,8 +49,6 @@ cd %>%
        x = "Distance from the US in collectivism") +
   theme_light()
 
-
-
 ```
 
 # Create processing functions
@@ -58,6 +56,7 @@ cd %>%
 We need to run the same steps on 4 different datasets, therefore we should make functions that we can run on each dataset and different grouping.
 
 ```{r functions}
+# We need to do the same processing and summarizing steps to get the tables in the required format. Therefore we create functions to reduce redundancy.
 
 custom_countries <- 
   c("LEB" = "LBN", 
@@ -87,7 +86,7 @@ process_study <- function(data = NULL){
     select(-edu_high, -edu_high_ger)
 }
 
-# Function to summarise studies into variables
+# Function to summarize studies into variables
 summarise_study <- function(data = NULL){
   
   stopifnot(!is.null(data))
@@ -140,11 +139,13 @@ create_table <- function(data = NULL){
 
 
 ```{r}
+study_files <- list.files(path = here::here("data/"), 
+                          pattern = "study..")
 
 summaries <-
-  # Get data
-  tibble(study = c("study1a", "study1b", "study2a", "study2b"), 
-         data = list(study1a, study1b, study2a, study2b)) %>% 
+  # Read data
+  tibble(study = study_files) %>% 
+  mutate(data = map(study, ~read_csv(here::here("data/", .x)))) %>% 
   # Process and summarise data on 3 levels (country, region, all)
   mutate(proc_data = map(data, process_study),
          country_sum = map(proc_data, ~group_by(.x, Region, country3) %>% 
@@ -167,17 +168,101 @@ summaries <-
          # Generate the tables
          gtable = map(bind_sum, create_table))
 
-
 # Verify
-summaries$gtable[[1]]
-summaries$gtable[[2]]
-summaries$gtable[[3]]
-summaries$gtable[[4]]
+summaries$gtable[[1]] 
+
+# Save
+gtsave(summaries$gtable[[1]], "docs/table1_study1a.rtf")
+gtsave(summaries$gtable[[2]], "docs/table1_study1b.rtf")
+gtsave(summaries$gtable[[3]], "docs/table1_study2a.rtf")
+gtsave(summaries$gtable[[4]], "docs/table1_study2b.rtf")
 
 # TODO: Iran higher education? it seems to be NA
 # Make summaries using the gt summary functions instead of binding rows
 
+```
 
+# Create exclusion table
+```{r}
+# Read pre-processed data
+trolley_proc <- vroom::vroom(here::here("data/trolley_preprocessed.csv"))
+
+trolley_proc %>% glimpse()
+
+exclusions <- 
+  trolley_proc %>% 
+  mutate(Region = str_remove(survey_name, "PSA006_")) %>% 
+  group_by(Region)
+
+exclude_careless <- 
+  exclusions %>% 
+  filter(careless_1 == 1 | careless_2 == 1 | careless_3 == 2) %>% 
+  summarise(Reason = "Careless responding",
+            n = n(), 
+            .groups = "drop")
+
+exclude_confusion <- 
+  exclusions %>% 
+  filter(confusion == 3) %>% 
+  summarise(Reason = "Confusion",
+            n = n(), 
+            .groups = "drop")
+
+exclude_familiar <- 
+  exclusions %>% 
+  filter(familiarity > 3) %>% 
+  summarise(Reason = "Familiarity of the research question",
+            n = n(), 
+            .groups = "drop")
+
+exclude_techproblem <- 
+  exclusions %>% 
+  filter(technical_problems == 2)  %>% 
+  summarise(Reason = "Technical problem",
+            n = n(), 
+            .groups = "drop")
+
+exclude_nonnative <- 
+  exclusions %>% 
+  filter(native_language == 2) %>% 
+  summarise(Reason = "Non-native speaker",
+            n = n(), 
+            .groups = "drop")
+
+
+exclude_careless
+exclude_confusion
+exclude_familiar
+exclude_techproblem
+exclude_nonnative
+
+exclude_all <- 
+  bind_rows(exclude_careless,
+            exclude_confusion,
+            exclude_familiar,
+            exclude_techproblem,
+            exclude_nonnative)
+
+# Exclusion reason by region (excluded participants can overlap!)
+exclude_table <-
+  exclude_all %>% 
+  pivot_wider(names_from = "Region", values_from = n) %>% 
+  mutate(All = Eastern + Southern + Western) %>%
+  gt() %>% 
+  grand_summary_rows(vars(Eastern, Southern, Western, All),
+                     fns = list(All = "sum"), 
+                     formatter = fmt_number,
+                     decimals = 0) %>% 
+  cols_label(Reason = "Reason to exclude") %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              column_labels.background.color = "#999999", 
+              )
+
+exclude_table
+
+gtsave(exclude_table_region, "docs/exclude_table.html")
 
 
 ```
