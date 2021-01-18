@@ -1,0 +1,544 @@
+---
+title: "Supplementary materials"
+author: "Bence Bago"
+date: "14 January 2021"
+output: html_document
+---
+
+```{r setup, echo=FALSE}
+library(BayesFactor)
+library(reshape2)
+library(ggplot2)
+
+```
+
+#Demographcs and exclusion 
+
+<!-- <Tamas> -->
+
+
+#Main replication analysis
+
+##Study 1a
+
+###Bayesian analysis
+
+
+<!-- //analysis with pre-defined priors -->
+
+<!-- //frequentist analysis with exclusions -->
+
+```{r Study1a Bayesian, echo=FALSE}
+
+#use data study1a
+
+western=subset(study1a, survey_name=="PSA006_Western", select=c("trolley_1_rate", "trolley_2_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
+westbf=round(as.numeric(west[2,1]),1)
+west_fr=t.test(rate ~ condition, data=western_long)
+
+southern=subset(study1a, survey_name=="PSA006_Southern", select=c("trolley_1_rate", "trolley_2_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26), nullInterval = c(0, Inf))
+southbf=round(as.numeric(south[2,1]),1)
+south_fr=t.test(rate ~ condition, data=southern_long)
+
+eastern=subset(study1a, survey_name=="PSA006_Eastern", select=c("trolley_1_rate", "trolley_2_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
+eastbf=round(as.numeric(east[2,1]),1)
+east_fr=t.test(rate ~ condition, data=eastern_long)
+
+
+```
+
+In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. 
+
+<!-- //Robustness analysis <PBence> -->
+
+<!-- //graph with exclusion -->
+```{r Study1a excl graph, echo =FALSE }
+
+full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$condition=plyr::mapvalues(full2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
+ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
+
+sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
+
+ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
+  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
+  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  guides(fill = FALSE) +
+  guides(color = FALSE) +
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+
+<!-- //Bayesian analysis without exclusions -->
+```{r Study1a Bayesian w/o exclusion, echo=FALSE}
+
+
+western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("trolley_1_rate", "trolley_2_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
+westbf_ne=round(as.numeric(west[2,1]),1)
+
+southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("trolley_1_rate", "trolley_2_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
+southbf_ne=round(as.numeric(south[2,1]),1)
+
+eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("trolley_1_rate", "trolley_2_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
+eastbf_ne=round(as.numeric(east[2,1]),1)
+```
+
+
+<!-- //graph without exclusion -->
+```{r Study1a w/o excl graph, echo =FALSE }
+
+full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$condition=plyr::mapvalues(full2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
+ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
+
+sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
+
+ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
+  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
+  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  guides(fill = FALSE) +
+  guides(color = FALSE) +
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+
+##Study 1b
+
+<!-- //analysis with pre-defined priors -->
+<!-- //frequentist analysis with exclusions -->
+```{r Study1b Bayesian, echo=FALSE}
+
+
+western=subset(study1b, survey_name=="PSA006_Western", select=c("speedboat_1_rate", "speedboat_2_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
+westbf=round(as.numeric(west[2,1]),1)
+west_fr=t.test(rate ~ condition, data=western_long)
+
+southern=subset(study1b, survey_name=="PSA006_Southern", select=c("speedboat_1_rate", "speedboat_2_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
+southbf=round(as.numeric(south[2,1]),1)
+south_fr=t.test(rate ~ condition, data=southern_long)
+
+eastern=subset(study1b, survey_name=="PSA006_Eastern", select=c("speedboat_1_rate", "speedboat_2_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
+eastbf=round(as.numeric(east[2,1]),1)
+east_fr=t.test(rate ~ condition, data=eastern_long)
+
+
+```
+
+<!-- //Robustness analysis <PBence> -->
+
+<!-- //graph with exclusion -->
+```{r Study1b excl graph, echo =FALSE }
+
+full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$condition=plyr::mapvalues(full2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
+ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
+
+sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
+
+ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
+  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
+  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  guides(fill = FALSE) +
+  guides(color = FALSE) +
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+<!-- //Bayesian analysis without exclusions -->
+```{r Study1b Bayesian w/o exclusions, echo=FALSE}
+
+
+
+western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("speedboat_1_rate", "speedboat_2_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
+westbf=round(as.numeric(west[2,1]),1)
+west_fr=t.test(rate ~ condition, data=western_long)
+
+southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("speedboat_1_rate", "speedboat_2_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
+southbf=round(as.numeric(south[2,1]),1)
+south_fr=t.test(rate ~ condition, data=southern_long)
+
+eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("speedboat_1_rate", "speedboat_2_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
+eastbf=round(as.numeric(east[2,1]),1)
+east_fr=t.test(rate ~ condition, data=eastern_long)
+
+```
+
+
+<!-- //graph without exclusion -->
+```{r Study1b w/o excl graph, echo =FALSE }
+
+full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$condition=plyr::mapvalues(full2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
+lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
+ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
+
+sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
+
+ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
+  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
+  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  guides(fill = FALSE) +
+  guides(color = FALSE) +
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+
+##Study 2a
+
+<!-- //analysis with pre-defined priors -->
+```{r Study2a Bayesian, echo=FALSE}
+
+
+western=subset(study2a, survey_name=="PSA006_Western", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+western_long$personal_force = factor(ifelse(western_long$condition=="trolley_3_rate"|western_long$condition=="trolley_5_rate", 0, 1))
+western_long$intention = factor(ifelse(western_long$condition=="trolley_4_rate"|western_long$condition=="trolley_5_rate", 1, 0))
+west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
+westbf=round(as.numeric(west[4,1]),1)
+
+southern=subset(study2a, survey_name=="PSA006_Southern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+southern_long$personal_force = factor(ifelse(southern_long$condition=="trolley_3_rate"|southern_long$condition=="trolley_5_rate", 0, 1))
+southern_long$intention = factor(ifelse(southern_long$condition=="trolley_4_rate"|southern_long$condition=="trolley_5_rate", 1, 0))
+south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
+southbf=round(as.numeric(south[4,1]),1)
+
+eastern=subset(study2a, survey_name=="PSA006_Eastern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+eastern_long$personal_force = factor(ifelse(eastern_long$condition=="trolley_3_rate"|eastern_long$condition=="trolley_5_rate", 0, 1))
+eastern_long$intention = factor(ifelse(eastern_long$condition=="trolley_4_rate"|eastern_long$condition=="trolley_5_rate", 1, 0))
+east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
+eastbf=round(as.numeric(east[4,1]),1)
+
+
+```
+
+
+<!-- //Robustness analysis <PBence> -->
+
+<!-- //graph with exclusion -->
+```{r Study2a excl graph, echo =FALSE }
+
+full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$personal_force=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
+full2$intention=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
+
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+
+
+ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
+  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+<!-- //Bayesian analysis without exclusions -->
+```{r Study2a Bayesian, echo=FALSE}
+
+
+western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+western_long$personal_force = factor(ifelse(western_long$condition=="trolley_3_rate"|western_long$condition=="trolley_5_rate", 0, 1))
+western_long$intention = factor(ifelse(western_long$condition=="trolley_4_rate"|western_long$condition=="trolley_5_rate", 1, 0))
+west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
+westbf=round(as.numeric(west[4,1]),1)
+
+southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+southern_long$personal_force = factor(ifelse(southern_long$condition=="trolley_3_rate"|southern_long$condition=="trolley_5_rate", 0, 1))
+southern_long$intention = factor(ifelse(southern_long$condition=="trolley_4_rate"|southern_long$condition=="trolley_5_rate", 1, 0))
+south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
+southbf=round(as.numeric(south[4,1]),1)
+
+eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+eastern_long$personal_force = factor(ifelse(eastern_long$condition=="trolley_3_rate"|eastern_long$condition=="trolley_5_rate", 0, 1))
+eastern_long$intention = factor(ifelse(eastern_long$condition=="trolley_4_rate"|eastern_long$condition=="trolley_5_rate", 1, 0))
+east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
+eastbf=round(as.numeric(east[4,1]),1)
+
+
+```
+
+
+<!-- //graph without exclusion -->
+```{r Study2a w/o excl graph, echo =FALSE }
+
+full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$personal_force=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
+full2$intention=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
+
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+
+
+ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
+  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+
+##Study 2b
+
+<!-- //analysis with pre-defined priors -->
+```{r study2b Bayesian, echo=FALSE}
+
+
+western=subset(study2b, survey_name=="PSA006_Western", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+western_long$personal_force = factor(ifelse(western_long$condition=="speedboat_3_rate"|western_long$condition=="speedboat_5_rate", 0, 1))
+western_long$intention = factor(ifelse(western_long$condition=="speedboat_4_rate"|western_long$condition=="speedboat_5_rate", 1, 0))
+west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
+westbf=round(as.numeric(west[4,1]),1)
+
+southern=subset(study2b, survey_name=="PSA006_Southern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+southern_long$personal_force = factor(ifelse(southern_long$condition=="speedboat_3_rate"|southern_long$condition=="speedboat_5_rate", 0, 1))
+southern_long$intention = factor(ifelse(southern_long$condition=="speedboat_4_rate"|southern_long$condition=="speedboat_5_rate", 1, 0))
+south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
+southbf=round(as.numeric(south[4,1]),1)
+
+eastern=subset(study2b, survey_name=="PSA006_Eastern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+eastern_long$personal_force = factor(ifelse(eastern_long$condition=="speedboat_3_rate"|eastern_long$condition=="speedboat_5_rate", 0, 1))
+eastern_long$intention = factor(ifelse(eastern_long$condition=="speedboat_4_rate"|eastern_long$condition=="speedboat_5_rate", 1, 0))
+east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
+eastbf=round(as.numeric(east[4,1]),1)
+
+
+```
+
+
+<!-- //Robustness analysis <PBence> -->
+
+<!-- //graph with exclusion -->
+```{r study2b excl graph, echo =FALSE }
+
+full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$personal_force=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
+full2$intention=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
+
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+
+
+ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
+  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+<!-- //Bayesian analysis without exclusions -->
+```{r study2b Bayesian, echo=FALSE}
+
+
+western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
+western_long$personal_force = factor(ifelse(western_long$condition=="speedboat_3_rate"|western_long$condition=="speedboat_5_rate", 0, 1))
+western_long$intention = factor(ifelse(western_long$condition=="speedboat_4_rate"|western_long$condition=="speedboat_5_rate", 1, 0))
+west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
+westbf=round(as.numeric(west[4,1]),1)
+
+southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
+southern_long$personal_force = factor(ifelse(southern_long$condition=="speedboat_3_rate"|southern_long$condition=="speedboat_5_rate", 0, 1))
+southern_long$intention = factor(ifelse(southern_long$condition=="speedboat_4_rate"|southern_long$condition=="speedboat_5_rate", 1, 0))
+south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
+southbf=round(as.numeric(south[4,1]),1)
+
+eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
+eastern_long$personal_force = factor(ifelse(eastern_long$condition=="speedboat_3_rate"|eastern_long$condition=="speedboat_5_rate", 0, 1))
+eastern_long$intention = factor(ifelse(eastern_long$condition=="speedboat_4_rate"|eastern_long$condition=="speedboat_5_rate", 1, 0))
+east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
+eastbf=round(as.numeric(east[4,1]),1)
+
+
+```
+
+
+<!-- //graph without exclusion -->
+```{r study2b w/o excl graph, echo =FALSE }
+
+full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
+full$survey_name=factor(full$survey_name)
+full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
+full2$personal_force=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
+full2$intention=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
+
+full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
+full2=na.omit(full2)
+
+
+
+ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
+  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+  facet_wrap(facets=vars(survey_name)) +
+  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
+```
+
+
+#Individualism-collectivism
+
+##Study 1a
+
+<!-- Bayesian country level individualism w/o exclusion <MARCI> -->
+
+<!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
+
+
+##Study 1b
+
+<!-- Bayesian country level individualism <MARCI> -->
+
+<!-- Bayesian personal level individualism  <MARCI>-->
+
+
+##Study 2a
+
+<!-- Bayesian country level individualism <MARCI> -->
+
+<!-- Bayesian personal level individualism  <MARCI>-->
+
+##Study 2b
+
+<!-- Bayesian country level individualism <MARCI> -->
+
+<!-- Bayesian personal level individualism  <MARCI>-->
+
+
+<!-- scatterplot visualisation  <BBENCE>-->
+
+#Additional analysis
+
+<!-- Oxford Utilitarianism scale <PBENCE> -->
+
+<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <MARCI> -->
+
+
+
