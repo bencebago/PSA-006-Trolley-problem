@@ -2,7 +2,14 @@
 title: "Supplementary materials"
 author: "Bence Bago"
 date: "14 January 2021"
-output: html_document
+output:
+  rmarkdown::pdf_document:
+    extra_dependencies: ["float"]
+    fig_caption: yes        
+
+header-includes: 
+  \usepackage{float} \floatplacement{figure}{H} 
+  \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
 ---
 
 ```{r setup, echo=FALSE}
@@ -53,12 +60,12 @@ east_fr=t.test(rate ~ condition, data=eastern_long)
 
 ```
 
-In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. 
+First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = `r westernbf`, Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results
 
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study1a excl graph, echo =FALSE }
+```{r Study1a excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE }
 
 full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -111,10 +118,11 @@ eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name=
 east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
 eastbf_ne=round(as.numeric(east[2,1]),1)
 ```
+We get similar results when we conduct the analysis on data without exclusion. In all three cultural clusters, we can see the same results, although with slightly bigger effect sizes. 
 
 
 <!-- //graph without exclusion -->
-```{r Study1a w/o excl graph, echo =FALSE }
+```{r Study1a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
 
 full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -179,7 +187,7 @@ east_fr=t.test(rate ~ condition, data=eastern_long)
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study1b excl graph, echo =FALSE }
+```{r Study1b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
 
 full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -239,7 +247,7 @@ east_fr=t.test(rate ~ condition, data=eastern_long)
 
 
 <!-- //graph without exclusion -->
-```{r Study1b w/o excl graph, echo =FALSE }
+```{r Study1b w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -307,7 +315,7 @@ eastbf=round(as.numeric(east[4,1]),1)
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph, echo =FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied.Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -362,7 +370,7 @@ eastbf=round(as.numeric(east[4,1]),1)
 
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, echo =FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -422,7 +430,7 @@ eastbf=round(as.numeric(east[4,1]),1)
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, echo =FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -477,7 +485,7 @@ eastbf=round(as.numeric(east[4,1]),1)
 
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph, echo =FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
