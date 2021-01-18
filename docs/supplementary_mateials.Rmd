@@ -12,11 +12,90 @@ header-includes:
   \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
 ---
 
-```{r setup, echo=FALSE}
+```{r setup, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 library(BayesFactor)
 library(reshape2)
 library(ggplot2)
+library(kableExtra)
 
+library(tidyverse)
+library(jsonlite)
+library(lubridate)
+library(vroom)
+
+setwd('C:/Users/Bence/Documents/PSA-006-Trolley-problem')
+
+trolley_raw <- vroom("data/trolley_raw.csv")
+
+# Correct answers for attention check for the tasks
+correct_answers_1 <- read_csv("meta_data/correct_answers_1.csv")
+correct_answers_2 <- read_csv("meta_data/correct_answers_2.csv")
+
+# Remove all trial runs and incomplete surveys
+trolley_proc <-
+  trolley_raw %>% 
+  # Aggregate randomization variables
+  mutate(scenario1 = case_when(FL_24_DO_Footbridgepole == 1 ~ "Pole",
+                               FL_24_DO_Footbridgeswitch == 1 ~ "Switch",
+                               TRUE ~ NA_character_),
+         scenario2 = case_when(FL_22_DO_Standardswitch == 1 ~ "Standardswitch",
+                               FL_22_DO_Standardfootbridge == 1 ~ "Standardfootbridge",
+                               FL_22_DO_Loop == 1 ~ "Loop",
+                               FL_22_DO_Obstaclecollide == 1 ~ "Obstaclecollide",
+                               TRUE ~ NA_character_)) %>% 
+  # Remove those who didn't finish the questionnaire
+  filter(Progress >= 98) %>% 
+  # Remove all practice runs
+  filter(str_detect(str_to_lower(practice), "false")) %>% 
+  # Remove the answers for a particular lab that has unflagged practice data
+  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+         !(lab == "USA_095"))
+
+# write_csv(trolley_proc, "data/trolley_preprocessed.csv")
+
+# Exclude participants specified in the preregistration
+trolley <-
+  trolley_proc %>% 
+  # Exclude careless responders
+  filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
+  filter(careless_3 != 2) %>%
+  # Remove confused participants 
+  filter(confusion != 3) %>%
+  # Exclude those with familiarity of the topic
+  filter(familiarity <= 3) %>%
+  # Technical problems is not in the master questionnaire!
+  filter(technical_problems != 2) %>% 
+  # Exclude those who did not fill the questionnaire on their native language
+  filter(native_language != 2)
+
+# Remove those who can't tell which scenarios they saw
+# Use the correct answer descriptions as attention check for the tasks
+# Only those are kept who answered either of the tasks correctly
+
+study1a <- 
+  trolley %>%
+  left_join(correct_answers_1, by = "scenario1") %>% 
+  filter(trolley_attention == trolley_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
+
+study1b <- 
+  trolley %>% 
+  left_join(correct_answers_1, by = "scenario1") %>% 
+  filter(speedboat_attention == speedboat_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
+
+study2a <-
+  trolley %>% 
+  left_join(correct_answers_2, by = "scenario2") %>% 
+  filter(trolley_attention == trolley_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
+
+study2b <-
+  trolley %>% 
+  left_join(correct_answers_2, by = "scenario2") %>% 
+  filter(speedboat_attention == speedboat_answer) %>%
+  select(-trolley_answer, -speedboat_answer)
 ```
 
 #1. Demographcs and exclusion 
@@ -31,40 +110,60 @@ library(ggplot2)
 ###Bayesian analysis
 
 
-<!-- //analysis with pre-defined priors -->
-<!-- //frequentist analysis with exclusions -->
-```{r Study1a Bayesian, echo=FALSE}
+```{r Study1a Bayesian, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #use data study1a
+survey=levels(factor(trolley_proc$survey_name))
+tabledata_s1a = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 
-western=subset(study1a, survey_name=="PSA006_Western", select=c("trolley_1_rate", "trolley_2_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
-westbf=round(as.numeric(west[2,1]),1)
-west_fr=t.test(rate ~ condition, data=western_long)
+for (i in survey){
+dat=subset(study1a, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
+tabledata_s1a[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
+frequentist=t.test(rate ~ condition, data=dat_long)
+tabledata_s1a[i, "t"]=round(frequentist$statistic,2)
+tabledata_s1a[i, "df"]=round(frequentist$parameter,2)
+tabledata_s1a[i, "p"]=round(frequentist$p.value,4)
+}
 
-southern=subset(study1a, survey_name=="PSA006_Southern", select=c("trolley_1_rate", "trolley_2_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26), nullInterval = c(0, Inf))
-southbf=round(as.numeric(south[2,1]),1)
-south_fr=t.test(rate ~ condition, data=southern_long)
+tabledata_s1a_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+for (i in survey){
+dat=subset(trolley_proc, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
+tabledata_s1a_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
+frequentist=t.test(rate ~ condition, data=dat_long)
+tabledata_s1a_ne[i, "t"]=round(frequentist$statistic,2)
+tabledata_s1a_ne[i, "df"]=round(frequentist$parameter,2)
+tabledata_s1a_ne[i, "p"]=round(frequentist$p.value,4)
+}
+studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
+rownames(studys1a_results) <- NULL
+studys1a_results[,"p"]<-"<.001"
 
-eastern=subset(study1a, survey_name=="PSA006_Eastern", select=c("trolley_1_rate", "trolley_2_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
-eastbf=round(as.numeric(east[2,1]),1)
-east_fr=t.test(rate ~ condition, data=eastern_long)
-
+kbl(
+  studys1a_results,
+  format = "latex",
+  booktabs = T,
+  escape=T,
+  caption = "Do personal force have an effect on moral dilemma judgements on Trolley dilemmas?",
+  centering=T,
+  position="H"
+  )%>%
+  kable_styling( full_width = F,  position="left")%>%
+  row_spec(row=0, bold=TRUE)%>%
+  collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 
 ```
 
-First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = `r westernbf`, Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results.
+First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = , Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results.
 
 <!-- //Robustness analysis <PBence> -->
 
 
 <!-- //graph with exclusion -->
-```{r Study1a excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE }
+```{r Study1a excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -98,30 +197,8 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 ```
 
 
-<!-- //Bayesian analysis without exclusions -->
-```{r Study1a Bayesian w/o exclusion, echo=FALSE}
-
-
-western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("trolley_1_rate", "trolley_2_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
-westbf_ne=round(as.numeric(west[2,1]),1)
-
-southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("trolley_1_rate", "trolley_2_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
-southbf_ne=round(as.numeric(south[2,1]),1)
-
-eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("trolley_1_rate", "trolley_2_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
-eastbf_ne=round(as.numeric(east[2,1]),1)
-```
-We get similar results when we conduct the analysis on data without exclusion. In all three cultural clusters, we can see the same results, although with slightly bigger effect sizes. 
-
-
 <!-- //graph without exclusion -->
-```{r Study1a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
+```{r Study1a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -142,7 +219,6 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
   stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
   geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
   geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
-  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
   facet_wrap(facets=vars(survey_name)) +
@@ -157,36 +233,56 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 ##Study 1b
 
-<!-- //analysis with pre-defined priors -->
-<!-- //frequentist analysis with exclusions -->
-```{r Study1b Bayesian, echo=FALSE}
+```{r Study1b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
 
-western=subset(study1b, survey_name=="PSA006_Western", select=c("speedboat_1_rate", "speedboat_2_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
-westbf=round(as.numeric(west[2,1]),1)
-west_fr=t.test(rate ~ condition, data=western_long)
+survey=levels(factor(trolley_proc$survey_name))
+tabledata_s1b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 
-southern=subset(study1b, survey_name=="PSA006_Southern", select=c("speedboat_1_rate", "speedboat_2_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
-southbf=round(as.numeric(south[2,1]),1)
-south_fr=t.test(rate ~ condition, data=southern_long)
+for (i in survey){
+dat=subset(study1b, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
+tabledata_s1b[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
+frequentist=t.test(rate ~ condition, data=dat_long)
+tabledata_s1b[i, "t"]=round(frequentist$statistic,2)
+tabledata_s1b[i, "df"]=round(frequentist$parameter,2)
+tabledata_s1b[i, "p"]=round(frequentist$p.value,3)
+}
 
-eastern=subset(study1b, survey_name=="PSA006_Eastern", select=c("speedboat_1_rate", "speedboat_2_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
-eastbf=round(as.numeric(east[2,1]),1)
-east_fr=t.test(rate ~ condition, data=eastern_long)
+tabledata_s1b_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+for (i in survey){
+dat=subset(trolley_proc, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
+tabledata_s1b_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
+frequentist=t.test(rate ~ condition, data=dat_long)
+tabledata_s1b_ne[i, "t"]=round(frequentist$statistic,2)
+tabledata_s1b_ne[i, "df"]=round(frequentist$parameter,2)
+tabledata_s1b_ne[i, "p"]=round(frequentist$p.value,3)
+}
+studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
+rownames(studys1b_results) <- NULL
+studys1b_results[studys1b_results==0.000]<-"<.001"
 
-
+kbl(
+  studys1b_results,
+  format = "latex",
+  booktabs = T,
+  escape=T,
+  caption = "Do personal force have an effect on moral dilemma judgements on Speedboat dilemmas?",
+  centering=T,
+  position="H"
+  )%>%
+  kable_styling( full_width = F,  position="left")%>%
+  row_spec(row=0, bold=TRUE)%>%
+  collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 ```
 
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study1b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
+```{r Study1b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -219,34 +315,9 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 ```
 
-<!-- //Bayesian analysis without exclusions -->
-```{r Study1b Bayesian w/o exclusions, echo=FALSE}
-
-
-
-western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("speedboat_1_rate", "speedboat_2_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-west=as_tibble(ttestBF(formula = rate ~ condition, data=western_long, rscale=0.26, nullInterval = c(0, Inf)))
-westbf=round(as.numeric(west[2,1]),1)
-west_fr=t.test(rate ~ condition, data=western_long)
-
-southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("speedboat_1_rate", "speedboat_2_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-south=as_tibble(ttestBF(formula = rate ~ condition, data=southern_long, rscale=0.26, nullInterval = c(0, Inf)))
-southbf=round(as.numeric(south[2,1]),1)
-south_fr=t.test(rate ~ condition, data=southern_long)
-
-eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("speedboat_1_rate", "speedboat_2_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-east=as_tibble(ttestBF(formula = rate ~ condition, data=eastern_long, rscale=0.26, nullInterval = c(0,Inf)))
-eastbf=round(as.numeric(east[2,1]),1)
-east_fr=t.test(rate ~ condition, data=eastern_long)
-
-```
-
 
 <!-- //graph without exclusion -->
-```{r Study1b w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE }
+```{r Study1b w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -282,31 +353,57 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 ##Study 2a
 
-<!-- //analysis with pre-defined priors -->
-```{r Study2a Bayesian, echo=FALSE}
+```{r Study2a Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
+survey=levels(factor(trolley_proc$survey_name))
+tabledata_s2a = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 
-western=subset(study2a, survey_name=="PSA006_Western", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-western_long$personal_force = factor(ifelse(western_long$condition=="trolley_3_rate"|western_long$condition=="trolley_5_rate", 0, 1))
-western_long$intention = factor(ifelse(western_long$condition=="trolley_4_rate"|western_long$condition=="trolley_5_rate", 1, 0))
-west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
-westbf=round(as.numeric(west[4,1]),1)
+for (i in survey){
+dat=subset(study2a, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt3=as_tibble(datt/datt2)
+tabledata_s2a[i, "BF"]=signif(round(datt3[1,1],1),2)
+frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
+tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
+tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
+tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+}
 
-southern=subset(study2a, survey_name=="PSA006_Southern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-southern_long$personal_force = factor(ifelse(southern_long$condition=="trolley_3_rate"|southern_long$condition=="trolley_5_rate", 0, 1))
-southern_long$intention = factor(ifelse(southern_long$condition=="trolley_4_rate"|southern_long$condition=="trolley_5_rate", 1, 0))
-south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
-southbf=round(as.numeric(south[4,1]),1)
+tabledata_s2a_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
+for (i in survey){
+dat=subset(trolley_proc, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt3=as_tibble(datt/datt2)
+tabledata_s2a_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
+frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
+tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
+tabledata_s2a_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
+tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+}
+studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
+rownames(studys2a_results) <- NULL
+studys2a_results[studys2a_results==0.000]<-"<.001"
 
-eastern=subset(study2a, survey_name=="PSA006_Eastern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-eastern_long$personal_force = factor(ifelse(eastern_long$condition=="trolley_3_rate"|eastern_long$condition=="trolley_5_rate", 0, 1))
-eastern_long$intention = factor(ifelse(eastern_long$condition=="trolley_4_rate"|eastern_long$condition=="trolley_5_rate", 1, 0))
-east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
-eastbf=round(as.numeric(east[4,1]),1)
-
+kbl(
+  studys2a_results,
+  format = "latex",
+  booktabs = T,
+  escape=T,
+  caption = "Do personal force interact with intention on Trolley dilemmas?",
+  centering=T,
+  position="H"
+  )%>%
+  kable_styling( full_width = F,  position="left")%>%
+  row_spec(row=0, bold=TRUE)%>%
+  collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 
 ```
 
@@ -314,7 +411,7 @@ eastbf=round(as.numeric(east[4,1]),1)
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied.Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -339,37 +436,9 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ```
 
-<!-- //Bayesian analysis without exclusions -->
-```{r Study2a Bayesian, echo=FALSE}
-
-
-western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-western_long$personal_force = factor(ifelse(western_long$condition=="trolley_3_rate"|western_long$condition=="trolley_5_rate", 0, 1))
-western_long$intention = factor(ifelse(western_long$condition=="trolley_4_rate"|western_long$condition=="trolley_5_rate", 1, 0))
-west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
-westbf=round(as.numeric(west[4,1]),1)
-
-southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-southern_long$personal_force = factor(ifelse(southern_long$condition=="trolley_3_rate"|southern_long$condition=="trolley_5_rate", 0, 1))
-southern_long$intention = factor(ifelse(southern_long$condition=="trolley_4_rate"|southern_long$condition=="trolley_5_rate", 1, 0))
-south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
-southbf=round(as.numeric(south[4,1]),1)
-
-eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-eastern_long$personal_force = factor(ifelse(eastern_long$condition=="trolley_3_rate"|eastern_long$condition=="trolley_5_rate", 0, 1))
-eastern_long$intention = factor(ifelse(eastern_long$condition=="trolley_4_rate"|eastern_long$condition=="trolley_5_rate", 1, 0))
-east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
-eastbf=round(as.numeric(east[4,1]),1)
-
-
-```
-
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -397,39 +466,65 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ##Study 2b
 
-<!-- //analysis with pre-defined priors -->
-```{r study2b Bayesian, echo=FALSE}
+```{r study2b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+survey=levels(factor(trolley_proc$survey_name))
+tabledata_s2b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 
+for (i in survey){
+dat=subset(study2b, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt3=as_tibble(datt/datt2)
+tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
+frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
+tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
+tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
+tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+}
 
-western=subset(study2b, survey_name=="PSA006_Western", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-western_long$personal_force = factor(ifelse(western_long$condition=="speedboat_3_rate"|western_long$condition=="speedboat_5_rate", 0, 1))
-western_long$intention = factor(ifelse(western_long$condition=="speedboat_4_rate"|western_long$condition=="speedboat_5_rate", 1, 0))
-west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
-westbf=round(as.numeric(west[4,1]),1)
+tabledata_s2b_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
+for (i in survey){
+dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt3=as_tibble(datt/datt2)
+tabledata_s2b_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
+frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
+tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
+tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
+tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+}
+studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
+rownames(studys2b_results) <- NULL
+studys2b_results[studys2b_results==0.000]<-"<.001"
 
-southern=subset(study2b, survey_name=="PSA006_Southern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-southern_long$personal_force = factor(ifelse(southern_long$condition=="speedboat_3_rate"|southern_long$condition=="speedboat_5_rate", 0, 1))
-southern_long$intention = factor(ifelse(southern_long$condition=="speedboat_4_rate"|southern_long$condition=="speedboat_5_rate", 1, 0))
-south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
-southbf=round(as.numeric(south[4,1]),1)
+kbl(
+  studys2b_results,
+  format = "latex",
+  booktabs = T,
+  escape=T,
+  caption = "Do personal force interact with intention on Speedboat dilemmas?",
+  centering=T,
+  position="H"
+  )%>%
+  kable_styling( full_width = F,  position="left")%>%
+  row_spec(row=0, bold=TRUE)%>%
+  collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 
-eastern=subset(study2b, survey_name=="PSA006_Eastern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-eastern_long$personal_force = factor(ifelse(eastern_long$condition=="speedboat_3_rate"|eastern_long$condition=="speedboat_5_rate", 0, 1))
-eastern_long$intention = factor(ifelse(eastern_long$condition=="speedboat_4_rate"|eastern_long$condition=="speedboat_5_rate", 1, 0))
-east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
-eastbf=round(as.numeric(east[4,1]),1)
 
 
 ```
 
-
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -454,37 +549,9 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ```
 
-<!-- //Bayesian analysis without exclusions -->
-```{r study2b Bayesian, echo=FALSE}
-
-
-western=subset(trolley_proc, survey_name=="PSA006_Western", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-western_long=na.omit(melt(data=western, variable.name = "condition", value.name="rate"))
-western_long$personal_force = factor(ifelse(western_long$condition=="speedboat_3_rate"|western_long$condition=="speedboat_5_rate", 0, 1))
-western_long$intention = factor(ifelse(western_long$condition=="speedboat_4_rate"|western_long$condition=="speedboat_5_rate", 1, 0))
-west=as_tibble(anovaBF(rate ~ personal_force*intention, data=western_long, rscaleFixed=0.26))
-westbf=round(as.numeric(west[4,1]),1)
-
-southern=subset(trolley_proc, survey_name=="PSA006_Southern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-southern_long=na.omit(melt(data=southern, variable.name = "condition", value.name="rate"))
-southern_long$personal_force = factor(ifelse(southern_long$condition=="speedboat_3_rate"|southern_long$condition=="speedboat_5_rate", 0, 1))
-southern_long$intention = factor(ifelse(southern_long$condition=="speedboat_4_rate"|southern_long$condition=="speedboat_5_rate", 1, 0))
-south=as_tibble(anovaBF(rate ~ personal_force*intention, data=southern_long, rscaleFixed=0.26))
-southbf=round(as.numeric(south[4,1]),1)
-
-eastern=subset(trolley_proc, survey_name=="PSA006_Eastern", select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-eastern_long=na.omit(melt(data=eastern, variable.name = "condition", value.name="rate"))
-eastern_long$personal_force = factor(ifelse(eastern_long$condition=="speedboat_3_rate"|eastern_long$condition=="speedboat_5_rate", 0, 1))
-eastern_long$intention = factor(ifelse(eastern_long$condition=="speedboat_4_rate"|eastern_long$condition=="speedboat_5_rate", 1, 0))
-east=as_tibble(anovaBF(rate ~ personal_force*intention, data=eastern_long, rscaleFixed=0.26))
-eastbf=round(as.numeric(east[4,1]),1)
-
-
-```
-
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -543,7 +610,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 #4. Additional analysis
 
-<!-- Oxford Utilitarianism scale <PBENCE> -->
+<!-- Oxford Utilitarianism Scale <PBENCE> -->
 
 <!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <BBence> -->
 
