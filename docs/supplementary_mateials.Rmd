@@ -19,12 +19,12 @@ library(ggplot2)
 
 ```
 
-#Demographcs and exclusion 
+#1. Demographcs and exclusion 
 
 <!-- <Tamas> -->
 
 
-#Main replication analysis
+#2. Main replication analysis
 
 ##Study 1a
 
@@ -32,9 +32,7 @@ library(ggplot2)
 
 
 <!-- //analysis with pre-defined priors -->
-
 <!-- //frequentist analysis with exclusions -->
-
 ```{r Study1a Bayesian, echo=FALSE}
 
 #use data study1a
@@ -60,9 +58,10 @@ east_fr=t.test(rate ~ condition, data=eastern_long)
 
 ```
 
-First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = `r westernbf`, Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results
+First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = `r westernbf`, Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results.
 
 <!-- //Robustness analysis <PBence> -->
+
 
 <!-- //graph with exclusion -->
 ```{r Study1a excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE }
@@ -511,7 +510,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 ```
 
 
-#Individualism-collectivism
+#3. Individualism-collectivism
 
 ##Study 1a
 
@@ -522,31 +521,31 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ##Study 1b
 
-<!-- Bayesian country level individualism <MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
 
-<!-- Bayesian personal level individualism  <MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
 
 ##Study 2a
 
-<!-- Bayesian country level individualism <MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
 
-<!-- Bayesian personal level individualism  <MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
 ##Study 2b
 
-<!-- Bayesian country level individualism <MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
 
-<!-- Bayesian personal level individualism  <MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
 
 <!-- scatterplot visualisation  <BBENCE>-->
 
-#Additional analysis
+#4. Additional analysis
 
 <!-- Oxford Utilitarianism scale <PBENCE> -->
 
-<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <MARCI> -->
+<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <BBence> -->
 
 
 
