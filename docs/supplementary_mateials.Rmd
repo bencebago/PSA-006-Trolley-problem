@@ -12,6 +12,7 @@ header-includes:
   \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
 ---
 
+\beginsupplement
 ```{r setup, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 library(BayesFactor)
 library(reshape2)
@@ -22,6 +23,9 @@ library(tidyverse)
 library(jsonlite)
 library(lubridate)
 library(vroom)
+library(countrycode)
+library(gt)
+library(janitor)
 
 setwd('C:/Users/Bence/Documents/PSA-006-Trolley-problem')
 
@@ -98,7 +102,118 @@ study2b <-
   select(-trolley_answer, -speedboat_answer)
 ```
 
-#1. Demographcs and exclusion 
+```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+cd_raw <- read_csv(here::here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
+
+cd <- 
+  cd_raw %>% 
+  transmute(country = names(.),
+            Collectivism = `United States2010-2014`) %>% 
+  extract(country, 
+          into = c("Country", "distance_year"), 
+          regex = "(.*)(\\d{4}-\\d{4})") %>% 
+  # Get the latest similarity data
+  group_by(Country) %>% 
+  slice_tail(n = 1) %>% 
+  ungroup() %>% 
+  # USA should have 0 distance (not NA)
+  mutate(Collectivism = if_else(is.na(Collectivism), 0, Collectivism),
+         country3 = countryname(sourcevar = Country, 
+                                destination = "iso3c")) 
+
+trolley_proc$lab=as.character(trolley_proc$lab)
+trolley_proc$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  trolley_proc$lab)
+levels(factor(trolley_proc$country))
+trolley_proc$country3=recode(trolley_proc$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+trolley_proc=merge(trolley_proc, cd, by=c("country3"))
+
+
+
+```
+
+```{r functions,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+# We need to do the same processing and summarizing steps to get the tables in the required format. Therefore we create functions to reduce redundancy.
+
+custom_countries <- 
+  c("LEB" = "LBN", 
+    "BUL" = "BGR", 
+    "SPA" = "ESP", 
+    "SWT" = "CHE")
+
+# Function to process the data
+process_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    transmute(id = ResponseId,
+            country3 = str_extract(lab, "[A-Z]+") %>% 
+            # Some country codes are not standard iso codes; replace
+                      recode(., !!!custom_countries),
+            Region = str_remove(survey_name, "PSA006_"),
+            # Age is a multiple choice question that starts at 18
+            Age = age_1 + 17,
+            Gender = sex,
+            edu_high = education_leve > 2,
+            # Higher education is recorded differently in German
+            edu_high_ger = education_level_germ > 4,
+            `Higher education` = case_when(country3 %in% c("AUT", "DEU") ~ edu_high_ger,
+                                  TRUE ~ edu_high)) %>% 
+    select(-edu_high, -edu_high_ger)
+}
+
+# Function to summarize studies into variables
+summarise_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    summarise(N = n(),
+            `Age Mean` = mean(Age, na.rm = TRUE),
+            `Age SD` = sd(Age, na.rm = TRUE),
+            `Male %` = mean(Gender == 1, na.rm = TRUE),
+            `Higher education %` = mean(`Higher education`, 
+                                        na.rm = TRUE),
+            .groups = "drop")
+  
+}
+
+# Function to create the publication ready table
+create_table <- function(data = NULL){
+  data %>% 
+  relocate(Country, .before = country3) %>% 
+  select(-country3, -distance_year) %>% 
+  gt(groupname_col = "data", 
+     rowname_col = "Region") %>%
+  fmt_number(columns = vars(`Age Mean`, `Age SD`),
+             decimals = 1) %>% 
+  tab_spanner(columns = vars(data), label = "Region") %>%
+  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
+             pattern = "{1} ({2})") %>% 
+  fmt_number(columns = vars(Collectivism),
+             decimals = 3) %>% 
+  fmt_percent(columns = vars(`Male %`, `Higher education %`),
+              decimals = 1) %>% 
+  fmt_missing(vars(Country, Collectivism, Region, data, `Higher education %`, `Male %`, `Age SD`)) %>% 
+  cols_label(`Age Mean` = "Age (SD)") %>% 
+  tab_footnote(
+    footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
+    locations = cells_column_labels(columns = vars(Collectivism))
+  ) %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999", 
+              )
+  
+}
+  
+
+```
+
+#1. Demographics and exclusion 
 
 <!-- <Tamas> -->
 
@@ -411,7 +526,7 @@ kbl(
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -438,7 +553,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -524,7 +639,7 @@ kbl(
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -551,7 +666,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -585,6 +700,10 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 <!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
 
+```{r}
+##cohen d calculation for every country
+#scatterplot
+```
 
 ##Study 1b
 
