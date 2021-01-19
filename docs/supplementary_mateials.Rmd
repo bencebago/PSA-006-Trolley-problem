@@ -12,6 +12,7 @@ header-includes:
   \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
 ---
 
+\beginsupplement
 ```{r setup, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 library(BayesFactor)
 library(reshape2)
@@ -98,7 +99,7 @@ study2b <-
   select(-trolley_answer, -speedboat_answer)
 ```
 
-#1. Demographcs and exclusion 
+#1. Demographics and exclusion 
 
 <!-- <Tamas> -->
 
@@ -411,7 +412,7 @@ kbl(
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -438,7 +439,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -524,7 +525,7 @@ kbl(
 <!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -551,7 +552,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
