@@ -124,10 +124,16 @@ cd <-
 
 trolley_proc$lab=as.character(trolley_proc$lab)
 trolley_proc$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  trolley_proc$lab)
-levels(factor(trolley_proc$country3))
 trolley_proc$country3=recode(trolley_proc$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
 trolley_proc=merge(trolley_proc, cd, by=c("country3"))
 
+###individualism/collectivism scale
+attach(trolley_proc)
+trolley_proc$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+trolley_proc$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+trolley_proc$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+trolley_proc$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(trolley_proc)
 
 
 ```
@@ -653,7 +659,52 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ```
 
 <!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
+```{r study1a vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
+#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
+ind=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2$condition=plyr::mapvalues(ind2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
+ind2=na.omit(ind2)
+
+  ggplot(ind2, aes(x=hor_ind, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
+)
+  
+  ggplot(ind2, aes(x=ver_ind, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical individualism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+  
+  ggplot(ind2, aes(x=hor_col, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
+    
+  ggplot(ind2, aes(x=ver_col, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical collectivism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+
+
+```
 
 ##Study 1b
 
