@@ -176,7 +176,7 @@ studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
 studys1a_results[,"p"]<-"<.001"
 
-studys1a_results[,"RR"]<-c("0.015, 47", "3e-08, 9e+0.6", "0.004, 14", "8e-15, 2e+13", "1e-23, 1.9e+22", "2e-19, 6e+17")
+studys1a_results[,"RR"]<-c("1.5e-02, 4.7e+01", "3.0e-08, 9.0e+06", "4.0e-0.3, 1.4e+01", "8.0e-15, 2.0e+13", "1.0e-23, 1.9e+22", "2.0e-19, 6.0e+17")
 
 kbl(
   studys1a_results,
@@ -300,6 +300,8 @@ tabledata_s1b_ne[i, "p"]=round(frequentist$p.value,3)
 studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
 rownames(studys1b_results) <- NULL
 studys1b_results[studys1b_results==0.000]<-"<.001"
+
+studys1b_results[,"RR"]<-c("2.6e-06, 5.7e+04", "3.0e-04, 2.5e+03", "6.0e-03, 4.3", "8.4e-10, 1.1e+08", "5.8e-18, 2.2e+16", "8.0e-18, 1.2e+16")
 
 kbl(
   studys1b_results,
@@ -427,6 +429,8 @@ tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
 rownames(studys2a_results) <- NULL
 studys2a_results[studys2a_results==0.000]<-"<.001"
+studys2a_results[,"RR"]<-c("2.2e-01, Inf", "1.3e-0.2, 2.3", "<1.0e-04, 3.1e+10", "2.7e-0.4, 1.1e+03", "<1.0e-04, 8.9e+15", "<1.0e-04, >1.0e+18")
+
 
 kbl(
   studys2a_results,
@@ -539,6 +543,8 @@ tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
 rownames(studys2b_results) <- NULL
 studys2b_results[studys2b_results==0.000]<-"<.001"
+studys2b_results[,"RR"]<-c("0, 2.8e-0.1", "2.2e-01, Inf", "1.2e-03, 1.5e+01, 3.1e+10", "8.0e-02, Inf", "0, 3.5e-01", "2.0e-0.3, 7.8e-01")
+
 
 kbl(
   studys2b_results,
@@ -618,10 +624,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 ##Study 1a
 
 <!-- Bayesian country level individualism w/o exclusion <MARCI> -->
-
-<!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
-
-```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohan D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
@@ -649,9 +652,40 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 
 ```
 
+<!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
+
+
 ##Study 1b
 
 <!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+```{r study1b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+##cohen d calculation for every country
+#scatterplot: x effect size, y individualism
+#size of dots: cohen d
+countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+
+for (i in levels(factor(trolley_proc$country3))){
+  d=subset(trolley_proc, country3==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
+  dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
+  countrydata[i,"cohend"]=effsize::cohen.d(rate~condition, data=dat_long)$estimate
+  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"N"]=length(dat_long$rate)
+}
+countrydata=na.omit(countrydata)
+ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
+  geom_point(aes(size=N))+
+  geom_text(hjust=-0.2,size=3)+
+  geom_smooth(method=lm, se=F)+ 
+  xlab("Effect size")+
+  theme_bw()+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
+  
+  
+
+```
+
 
 <!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
@@ -659,12 +693,82 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ##Study 2a
 
 <!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+```{r study2a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+##cohen d calculation for every country
+#scatterplot: x effect size, y individualism
+#size of dots: cohen d
+countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+
+for (i in levels(factor(trolley_proc$country3))){
+  d=subset(trolley_proc, country3==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+  dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
+  dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
+  dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
+  if (length(dat_long$rate)<10){
+    countrydata[i,"cohend"]=NA
+  }else{
+    countrydata[i,"cohend"]=effectsize::eta_squared(aov(rate~intention:personal_force, data=dat_long))$Eta2
+  }
+  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"N"]=length(dat_long$rate)
+}
+
+countrydata=na.omit(countrydata)
+ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
+  geom_point(aes(size=N))+
+  geom_text(hjust=-0.2,size=3)+
+  geom_smooth(method=lm, se=F)+ 
+  xlab("Effect size")+
+  theme_bw()+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
+  
+  
+
+```
+
 
 <!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
 ##Study 2b
 
 <!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+```{r study2b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the interactional effect of personal force and intention in Eta squared on Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+##cohen d calculation for every country
+#scatterplot: x effect size, y individualism
+#size of dots: cohen d
+countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+
+for (i in levels(factor(trolley_proc$country3))){
+  d=subset(trolley_proc, country3==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+  dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
+  dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
+  dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
+  if (length(dat_long$rate)<10){
+    countrydata[i,"cohend"]=NA
+  }else{
+    countrydata[i,"cohend"]=effectsize::eta_squared(aov(rate~intention:personal_force, data=dat_long))$Eta2
+  }
+  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"N"]=length(dat_long$rate)
+}
+
+countrydata=na.omit(countrydata)
+ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
+  geom_point(aes(size=N))+
+  geom_text(hjust=-0.2,size=3)+
+  geom_smooth(method=lm, se=F)+ 
+  xlab("Effect size")+
+  theme_bw()+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
+  
+  
+
+```
+
 
 <!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
 
