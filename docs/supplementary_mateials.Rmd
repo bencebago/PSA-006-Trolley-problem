@@ -124,92 +124,11 @@ cd <-
 
 trolley_proc$lab=as.character(trolley_proc$lab)
 trolley_proc$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  trolley_proc$lab)
-levels(factor(trolley_proc$country))
+levels(factor(trolley_proc$country3))
 trolley_proc$country3=recode(trolley_proc$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
 trolley_proc=merge(trolley_proc, cd, by=c("country3"))
 
 
-
-```
-
-```{r functions,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-# We need to do the same processing and summarizing steps to get the tables in the required format. Therefore we create functions to reduce redundancy.
-
-custom_countries <- 
-  c("LEB" = "LBN", 
-    "BUL" = "BGR", 
-    "SPA" = "ESP", 
-    "SWT" = "CHE")
-
-# Function to process the data
-process_study <- function(data = NULL){
-  
-  stopifnot(!is.null(data))
-  
-  data %>% 
-    transmute(id = ResponseId,
-            country3 = str_extract(lab, "[A-Z]+") %>% 
-            # Some country codes are not standard iso codes; replace
-                      recode(., !!!custom_countries),
-            Region = str_remove(survey_name, "PSA006_"),
-            # Age is a multiple choice question that starts at 18
-            Age = age_1 + 17,
-            Gender = sex,
-            edu_high = education_leve > 2,
-            # Higher education is recorded differently in German
-            edu_high_ger = education_level_germ > 4,
-            `Higher education` = case_when(country3 %in% c("AUT", "DEU") ~ edu_high_ger,
-                                  TRUE ~ edu_high)) %>% 
-    select(-edu_high, -edu_high_ger)
-}
-
-# Function to summarize studies into variables
-summarise_study <- function(data = NULL){
-  
-  stopifnot(!is.null(data))
-  
-  data %>% 
-    summarise(N = n(),
-            `Age Mean` = mean(Age, na.rm = TRUE),
-            `Age SD` = sd(Age, na.rm = TRUE),
-            `Male %` = mean(Gender == 1, na.rm = TRUE),
-            `Higher education %` = mean(`Higher education`, 
-                                        na.rm = TRUE),
-            .groups = "drop")
-  
-}
-
-# Function to create the publication ready table
-create_table <- function(data = NULL){
-  data %>% 
-  relocate(Country, .before = country3) %>% 
-  select(-country3, -distance_year) %>% 
-  gt(groupname_col = "data", 
-     rowname_col = "Region") %>%
-  fmt_number(columns = vars(`Age Mean`, `Age SD`),
-             decimals = 1) %>% 
-  tab_spanner(columns = vars(data), label = "Region") %>%
-  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
-             pattern = "{1} ({2})") %>% 
-  fmt_number(columns = vars(Collectivism),
-             decimals = 3) %>% 
-  fmt_percent(columns = vars(`Male %`, `Higher education %`),
-              decimals = 1) %>% 
-  fmt_missing(vars(Country, Collectivism, Region, data, `Higher education %`, `Male %`, `Age SD`)) %>% 
-  cols_label(`Age Mean` = "Age (SD)") %>% 
-  tab_footnote(
-    footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
-    locations = cells_column_labels(columns = vars(Collectivism))
-  ) %>% 
-  tab_options(row.striping.include_table_body = TRUE,
-              row.striping.background_color = "#EEEEEE", 
-              row.striping.include_stub = TRUE,
-              row_group.background.color = "#999999", 
-              column_labels.background.color = "#999999", 
-              )
-  
-}
-  
 
 ```
 
@@ -700,9 +619,32 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 <!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
 
-```{r}
+```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohan D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
-#scatterplot
+#scatterplot: x effect size, y individualism
+#size of dots: cohen d
+countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+
+for (i in levels(factor(trolley_proc$country3))){
+  d=subset(trolley_proc, country3==i, select=c("trolley_1_rate", "trolley_2_rate"))
+  dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
+  countrydata[i,"cohend"]=effsize::cohen.d(rate~condition, data=dat_long)$estimate
+  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"N"]=length(dat_long$rate)
+}
+countrydata=na.omit(countrydata)
+ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
+  geom_point(aes(size=N))+
+  geom_text(hjust=-0.2,size=3)+
+  geom_smooth(method=lm, se=F)+ 
+  xlab("Effect size")+
+  theme_bw()+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
+  
+  
+
 ```
 
 ##Study 1b
