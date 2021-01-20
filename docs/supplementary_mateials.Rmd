@@ -23,6 +23,9 @@ library(tidyverse)
 library(jsonlite)
 library(lubridate)
 library(vroom)
+library(countrycode)
+library(gt)
+library(janitor)
 
 setwd('C:/Users/Bence/Documents/PSA-006-Trolley-problem')
 
@@ -97,6 +100,36 @@ study2b <-
   left_join(correct_answers_2, by = "scenario2") %>% 
   filter(speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
+```
+
+```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+cd_raw <- read_csv(here::here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
+
+cd <- 
+  cd_raw %>% 
+  transmute(country = names(.),
+            Collectivism = `United States2010-2014`) %>% 
+  extract(country, 
+          into = c("Country", "distance_year"), 
+          regex = "(.*)(\\d{4}-\\d{4})") %>% 
+  # Get the latest similarity data
+  group_by(Country) %>% 
+  slice_tail(n = 1) %>% 
+  ungroup() %>% 
+  # USA should have 0 distance (not NA)
+  mutate(Collectivism = if_else(is.na(Collectivism), 0, Collectivism),
+         country3 = countryname(sourcevar = Country, 
+                                destination = "iso3c")) 
+
+trolley_proc$lab=as.character(trolley_proc$lab)
+trolley_proc$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  trolley_proc$lab)
+levels(factor(trolley_proc$country3))
+trolley_proc$country3=recode(trolley_proc$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+trolley_proc=merge(trolley_proc, cd, by=c("country3"))
+
+
+
 ```
 
 #1. Demographics and exclusion 
@@ -586,6 +619,33 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 <!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
 
+```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohan D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+##cohen d calculation for every country
+#scatterplot: x effect size, y individualism
+#size of dots: cohen d
+countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+
+for (i in levels(factor(trolley_proc$country3))){
+  d=subset(trolley_proc, country3==i, select=c("trolley_1_rate", "trolley_2_rate"))
+  dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
+  countrydata[i,"cohend"]=effsize::cohen.d(rate~condition, data=dat_long)$estimate
+  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"N"]=length(dat_long$rate)
+}
+countrydata=na.omit(countrydata)
+ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
+  geom_point(aes(size=N))+
+  geom_text(hjust=-0.2,size=3)+
+  geom_smooth(method=lm, se=F)+ 
+  xlab("Effect size")+
+  theme_bw()+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
+  
+  
+
+```
 
 ##Study 1b
 
