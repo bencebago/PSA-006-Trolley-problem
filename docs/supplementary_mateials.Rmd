@@ -176,6 +176,8 @@ studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
 studys1a_results[,"p"]<-"<.001"
 
+studys1a_results[,"RR"]<-c("0.015, 47", "3e-08, 9e+0.6", "0.004, 14", "8e-15, 2e+13", "1e-23, 1.9e+22", "2e-19, 6e+17")
+
 kbl(
   studys1a_results,
   format = "latex",
