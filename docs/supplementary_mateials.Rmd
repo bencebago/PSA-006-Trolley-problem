@@ -199,9 +199,7 @@ kbl(
 
 ```
 
-First, we analysed the data in which we applied all exclusion criteria regarding the trolley dilemmas. In all of the cultural clusters we investigated, we found strong evidence for the effect of personal force on moral dilemma judgements. In the Western cluster; BF = , Error = , d = ,  in the eastern cluster, BF =  and in the southern cluster too, BF = . As pre-registered we also conducted a frequentist analysis, which yielded the same conclusions. There was a significant difference in the western cluster between the personal force and no personal force conditions, t () = , p = , similarly in the southern, t () = p = , and the eastern clusters, t () = p = . Figure x. represents the results.
 
-<!-- //Robustness analysis <PBence> -->
 
 
 <!-- //graph with exclusion -->
@@ -323,7 +321,6 @@ kbl(
   collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 ```
 
-<!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
 ```{r Study1b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
@@ -454,8 +451,6 @@ kbl(
 ```
 
 
-<!-- //Robustness analysis <PBence> -->
-
 <!-- //graph with exclusion -->
 ```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
@@ -569,7 +564,6 @@ kbl(
 
 ```
 
-<!-- //Robustness analysis <PBence> -->
 
 <!-- //graph with exclusion -->
 ```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
@@ -625,11 +619,11 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 ```
 
 
-#3. Individualism-collectivism
+#3. Effects of individualism-collectivism
 
 ##Study 1a
 
-<!-- Bayesian country level individualism w/o exclusion <MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion  -->
 ```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
@@ -658,7 +652,7 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 
 ```
 
-<!-- Bayesian personal level individualism  w/o exclusion <MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion -->
 ```{r study1a vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
@@ -708,7 +702,7 @@ ind2=na.omit(ind2)
 
 ##Study 1b
 
-<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion> -->
 ```{r study1b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
@@ -738,12 +732,58 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ```
 
 
-<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion-->
+```{r study1b vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
+ind=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2$condition=plyr::mapvalues(ind2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
+ind2=na.omit(ind2)
+
+  ggplot(ind2, aes(x=hor_ind, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
+)
+  
+  ggplot(ind2, aes(x=ver_ind, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical individualism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+  
+  ggplot(ind2, aes(x=hor_col, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
+    
+  ggplot(ind2, aes(x=ver_col, y=rate, color=condition)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical collectivism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+
+
+```
 
 
 ##Study 2a
 
-<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion -->
 ```{r study2a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
@@ -780,11 +820,64 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ```
 
 
-<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion-->
+```{r study2a vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (trolley dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
+
+ind=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2$personal_force = factor(ifelse(ind2$condition=="trolley_3_rate"|ind2$condition=="trolley_5_rate", 0, 1), labels=c("No personal force","Personal force"))
+ind2$intention = factor(ifelse(ind2$condition=="trolley_4_rate"|ind2$condition=="trolley_5_rate", 1, 0), labels=c("No intention", "Intention"))
+
+ind2=na.omit(ind2)
+
+  ggplot(ind2, aes(x=hor_ind, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
+)
+  
+  ggplot(ind2, aes(x=ver_ind, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical individualism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+  
+  ggplot(ind2, aes(x=hor_col, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
+    
+  ggplot(ind2, aes(x=ver_col, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical collectivism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+
+
+```
 
 ##Study 2b
 
-<!-- Bayesian country level individualism w/o exclusion<MARCI> -->
+<!-- Bayesian country level individualism w/o exclusion -->
 ```{r study2b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the interactional effect of personal force and intention in Eta squared on Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
@@ -821,16 +914,68 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ```
 
 
-<!-- Bayesian personal level individualism  w/o exclusion<MARCI>-->
+<!-- Bayesian personal level individualism  w/o exclusion-->
+```{r study2b vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (speedboat dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
+
+ind=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
+ind2$personal_force = factor(ifelse(ind2$condition=="speedboat_3_rate"|ind2$condition=="speedboat_5_rate", 0, 1), labels=c("No personal force","Personal force"))
+ind2$intention = factor(ifelse(ind2$condition=="speedboat_4_rate"|ind2$condition=="speedboat_5_rate", 1, 0), labels=c("No intention", "Intention"))
+
+ind2=na.omit(ind2)
+
+  ggplot(ind2, aes(x=hor_ind, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
+)
+  
+  ggplot(ind2, aes(x=ver_ind, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical individualism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
+  
+  ggplot(ind2, aes(x=hor_col, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
+    
+  ggplot(ind2, aes(x=ver_col, y=rate, color=personal_force)) +
+  geom_smooth(method=lm)+
+  labs( x= "Vertical collectivism", y="")+ theme_bw()+
+  expand_limits(y=c(1,9))+
+  facet_wrap(facets=vars(intention))+
+  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.position="none")
 
 
-<!-- scatterplot visualisation  <BBENCE>-->
+```
+
+
 
 #4. Additional analysis
 
-<!-- Oxford Utilitarianism Scale <PBENCE> -->
+<!-- Oxford Utilitarianism Scale <MARCI> -->
 
-<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <BBence> -->
+<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <MARCI> -->
 
 
 
