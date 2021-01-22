@@ -6,10 +6,11 @@ output:
   rmarkdown::pdf_document:
     extra_dependencies: ["float"]
     fig_caption: yes        
-
 header-includes: 
   \usepackage{float} \floatplacement{figure}{H} 
   \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+editor_options: 
+  chunk_output_type: console
 ---
 
 \beginsupplement
@@ -18,8 +19,11 @@ library(BayesFactor)
 library(reshape2)
 library(ggplot2)
 library(kableExtra)
+<<<<<<< HEAD
+=======
 library(lmerTest)
 
+>>>>>>> 63c799860db068f808a3109a2c9024c9d18a1f40
 library(tidyverse)
 library(jsonlite)
 library(lubridate)
@@ -1205,10 +1209,91 @@ ind2=na.omit(ind2)
 
 
 #4. Additional analysis
+##Effect of physical contact and intention
 
+In every cluster and for both types of dilemma we found good enough evidence supporting the alternative hypothesis when testing the effect of physical contact and the effect of intention. The summary of the results can be found in Table X.
+
+```{r}
+# Load the processed data without any exclusion
+trolley_proc <- vroom(here::here("data", "trolley_preprocessed.csv"))
+
+# Tidy Bf extractor function
+my_bf_extractor <- function(bf_obj) {
+  BayesFactor::extractBF(bf_obj) %>% 
+    tibble::rownames_to_column(var = "scale") %>% 
+    dplyr::mutate(scale = stringr::str_extract(scale, "(?<=\\s)(.*)(?=\\s)"))
+}
+
+# Comparing standard footbridge with footbridge pole in every cluster
+additional_res_1 <- 
+  trolley_proc %>% 
+  select(survey_name, survey_id, matches("trolley_[0-9]_rate|speedboat_[0-9]_rate")) %>% 
+  pivot_longer(matches("_rate"), names_to = "task", names_pattern = "(.*)_rate", values_to = "rate") %>% 
+  mutate(comparison = case_when(task %in% c("trolley_1", "trolley_4") ~ "trolley_physical",
+                                task %in% c("speedboat_1", "speedboat_4") ~ "speedboat_physical",
+                                task %in% c("trolley_3", "trolley_2") ~ "trolley_intention",
+                                task %in% c("speedboat_3", "speedboat_2") ~ "speedboat_intention",
+                                TRUE ~ NA_character_)) %>% 
+  drop_na(rate, comparison) %>% 
+  nest(data = c(survey_id, task, rate)) %>% 
+  mutate(bf_res = map(data, ~ ttestBF(formula = rate ~ task, data = .x, rscale=0.26)),
+         bf = map_dbl(bf_res, ~ round(my_bf_extractor(.x)$bf, 2)),
+         freq_res = map(data, ~ t.test(rate ~ task, data = .x,  paired = FALSE) %>% broom::tidy()),
+         t = map_dbl(freq_res, ~ round(.x$statistic, 2)),
+         p = map_dbl(freq_res, ~ round(.x$p.value, 2)),
+         df = map_dbl(freq_res, ~ round(.x$parameter, 2)))
+
+additional_res_1 %>% 
+  filter(str_detect(comparison, "intention|physical")) %>% 
+  separate(comparison, into = c("Dilemma", "Comparison"), sep = "_") %>% 
+  transmute(Cluster = str_remove(survey_name, "^[^_]*_"),
+            Dilemma = str_to_title(Dilemma),
+            Comparison = case_when(Comparison == "physical" ~ "Physical Contact",
+                                   Comparison == "intention" ~ "Intention"),
+            `t value` = t,
+            `B` = bf,
+            `Degrees of Freedom` = df,
+            `p value` = p) %>% 
+  papaja::apa_table(
+    caption = "Effect of Physical Contact and Intention",
+    escape = TRUE)
+```
+
+##Comparing the standard switch and standard footbridge dilemmas
+
+When comparing the standard switch and standard footbridge dilemmas in all clusters for the trolley and the speedboat tasks we found good enough evidence in every case for the support of the alternative hypothesis. The summary results of each comparison separately can be found in Table X.
+
+```{r}
+additional_res_2 <- 
+  trolley_proc %>% 
+  select(survey_name, survey_id, matches("trolley_[0-9]_rate|speedboat_[0-9]_rate")) %>% 
+  pivot_longer(matches("_rate"), names_to = "task", names_pattern = "(.*)_rate", values_to = "rate") %>% 
+  mutate(comparison = case_when(task %in% c("trolley_3", "trolley_4") ~ "trolley_standard",
+                                task %in% c("speedboat_3", "speedboat_4") ~ "speedboat_standard",
+                                TRUE ~ NA_character_)) %>% 
+  drop_na(rate, comparison) %>% 
+  nest(data = c(survey_id, task, rate)) %>% 
+  mutate(bf_res = map(data, ~ ttestBF(formula = rate ~ task, data = .x, rscale=0.26)),
+         bf = map_dbl(bf_res, ~ round(my_bf_extractor(.x)$bf, 2)),
+         freq_res = map(data, ~ t.test(rate ~ task, data = .x,  paired = FALSE) %>% broom::tidy()),
+         t = map_dbl(freq_res, ~ round(.x$statistic, 2)),
+         p = map_dbl(freq_res, ~ round(.x$p.value, 2)),
+         df = map_dbl(freq_res, ~ round(.x$parameter, 2)))
+
+additional_res_2 %>% 
+  filter(str_detect(comparison, "standard")) %>% 
+  separate(comparison, into = c("Dilemma", "Comparison"), sep = "_") %>% 
+  transmute(Cluster = str_remove(survey_name, "^[^_]*_"),
+            Dilemma = str_to_title(Dilemma),
+            `t value` = t,
+            `B` = bf,
+            `Degrees of Freedom` = df,
+            `p value` = p) %>% 
+  papaja::apa_table(
+    caption = "Comparing the Standard Switch and Standard Footbridge Dilemmas",
+    escape = TRUE)
+```
+
+
+##Oxford utilitarianism Scale
 <!-- Oxford Utilitarianism Scale <MARCI> -->
-
-<!-- effect of physical contact and intention separately for speedboat (study 1b and 2b) and trolley dilemmas Bayesian analysis pre-defined priors <MARCI> -->
-
-
-

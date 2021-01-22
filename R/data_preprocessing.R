@@ -30,7 +30,9 @@ trolley_proc <-
   # Remove the answers for a particular lab that has unflagged practice data
   filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
          !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-         !(lab == "USA_095"))
+         !(lab == "USA_095")) %>% 
+  # Exclude all variables that are not needed
+  select(-c(Status:IND_006, second:LS, JPN_003_debrief, image1:image6, PHL_004_consent:PHL_003_consent, confirmCode, Q_URL, imgset, practice))
 
 # write_csv(trolley_proc, "data/trolley_preprocessed.csv")
 
