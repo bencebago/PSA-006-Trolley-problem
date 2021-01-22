@@ -151,7 +151,6 @@ survey=levels(factor(trolley_proc$survey_name))
 
 ###Bayesian analysis
 
-
 ```{r Study1a Bayesian, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #use data study1a
@@ -200,11 +199,11 @@ kbl(
 
 ```
 
-
+Table S1 and S2 and Figures S1-4 summarizes the results of the effect of personal force on moral dilemma judgements, separately on Speedboat and Trolley dilemmas. First, we conducted the analysis with excluding participants based on our exclusion criteria. In this analysis, we replicated the effect of personal force in all cultural clusters, in both the Trolley and Speedboat dilemmas. We also analysed all data without exclusions - in both dilemmas, we arrive at the same conclusion; the effect of personal force on moral judgments is culturally universal; people judge acts that require no personal force more acceptable as acts that do. The "RR" column in the tables indicates the robustness region; a region for the prior with which we would arrive at the same conclusion. This region is very wide which indicates that there is no subjectivity in the results - we would arrive at the same conclusion even with unrealistically big and small priors. Although excluding a large number of our participants did not change the conclusion; it introduced some noise that differentially affected the cultural clusters. In the western cluster for example, the effect is less strong if we analyse the data after exclusions, while such difference cannot be observed on the two other cultural clusters. 
 
 
 <!-- //graph with exclusion -->
-```{r Study1a excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1a excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusion criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -239,7 +238,7 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study1a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusion criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -271,8 +270,6 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 ```
 
-
-##Study 1b
 
 ```{r Study1b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -324,7 +321,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r Study1b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusions criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusion criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -359,7 +356,7 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study1b w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusions criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1b w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusion criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -393,7 +390,12 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 ```
 
 
-##Study 2a
+##Study 2a and 2b
+
+We analysed the interactional effect of personal force and intention in a similar way (Tables S3 and S4, Figures S5-S8). We treatment coded both personal force (0 = no personal force; 1 = personal force) and intention (0 = no intention; 1 = intention), and added them to the model. In the Bayesian analysis, the Bayes factor represents the ratio of two Bayesian regression models (we always used the same priors for these models): the denominator model,a model with the two main effects but without the critical two way interaction, and in the numerator the full model including the inteeraction term. In case of the trolley dilemmas, we have very strong evidence (BF >10) to conclude that the interaction exists in the Western and Southern cultural clusters, but not in the Eastern cluster (where 1/10 < BF < 10, suggesting an inconclusive result). here, we believe is again a case of selection bias. When we analyse all the data, without exclusion, we manage to replicate the effect in all cultural clusters (BF > 10). The evidence however is more mixed for the Speedboat dilemmas. Here, we only find evidence for the interaction on the Western cluster, but we do not find an effect on the other two clusters. Although the BF only goes below our null threshold (eastern cluster - without exclusion), BF < 1 in this case makes the null hypothesis more likely then the alternative one.
+
+
+Since the exclusion criteria clearly induced a selection and affected our results in unexpected ways, we decided to analyse all the data from now on/
 
 ```{r Study2a Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -452,7 +454,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph,fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusions criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -479,7 +481,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, fig.pos="H",out.width="90%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -505,7 +507,6 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 ```
 
 
-##Study 2b
 
 ```{r study2b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 tabledata_s2b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -565,7 +566,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -592,7 +593,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph,fig.pos="H",out.width="90%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -620,7 +621,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 #3. Effects of individualism-collectivism
 
-##Study 1a
+##Study 1a and 1b
 ```{r analysis individual + country level study 1a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
 #table has 5lines: country level individualism, then individual level measures
@@ -678,8 +679,11 @@ kbl(
 
 ```
 
+In the following analysis we used Bayesian and frequentist miwed effect models in whihc we added the random intercept of countries to all models. IN the Bayesian analysis, the bayes faktor is a comparison of the model in which there are only main effects (denominator) and the full model (including the main effects and interaction). 
+We can see that regarding theeffect of personal force, there is a strong evidence that no individual or country level measure of culture affects it, in fact, in 4, out of the 5 cases in the speedboat, and 5 out of 5 cases in the trolley dilemma we have strong evidence for a null effect. 
+
 <!-- Bayesian country level individualism w/o exclusion  -->
-```{r study1a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study1a overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
@@ -755,7 +759,7 @@ ind2=na.omit(ind2)
 
 ```
 
-##Study 1b
+
 ```{r analysis individual + country level study 1b, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
 #table has 5lines: country level individualism, then individual level measures
@@ -812,7 +816,7 @@ kbl(
 ```
 
 <!-- Bayesian country level individualism w/o exclusion> -->
-```{r study1b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study1b overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
@@ -890,8 +894,9 @@ ind2=na.omit(ind2)
 ```
 
 
-##Study 2a
+##Study 2a and 2b
 
+We applied similar analysis strategy as before: we compared the full model (including the three way interaction) with a model that includes all main effects and interactions but the three-way interaction. Here, the results are somewhat fuzzier. IN the trolley dilemma, the frequentist test shows a significant effect of both country level and horizontal collectivism, but the Bayes Faktor shows the contrary; that the null effect is more likely to be true than the alternative. This comes from the differences between the two tests; the frequentuists compares to the intercept, while the Bayesian to an alternative model. Even if the effect exists it cannot be generalized to the speedboat dilemmas. 
 
 <!-- Bayesian country level individualism w/o exclusion -->
 ```{r analysis individual + country level study 2a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -952,7 +957,7 @@ kbl(
 ```
 
 
-```{r study2a overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study2a overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Eta sqaured on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
@@ -1043,7 +1048,7 @@ ind2=na.omit(ind2)
 
 ```
 
-##Study 2b
+
 
 <!-- Bayesian country level individualism w/o exclusion -->
 ```{r analysis individual + country level study 2b, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -1106,7 +1111,7 @@ kbl(
 ```
 
 
-```{r study2b overall individualism plot, fig.pos="H",out.width="90%",fig.cap="Correlation between country-level individualism/collectivism and the interactional effect of personal force and intention in Eta squared on Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study2b overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the interactional effect of personal force and intention in Eta squared on Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
