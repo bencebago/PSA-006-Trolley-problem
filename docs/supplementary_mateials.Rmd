@@ -29,6 +29,8 @@ library(countrycode)
 library(gt)
 library(janitor)
 
+##weighted least squares regression lm
+
 setwd('C:/Users/Bence/Documents/PSA-006-Trolley-problem')
 
 trolley_raw <- vroom("data/trolley_raw.csv")
@@ -190,7 +192,7 @@ kbl(
   format = "latex",
   booktabs = T,
   escape=T,
-  caption = "Do personal force have an effect on moral dilemma judgements on Trolley dilemmas?",
+  caption = "The effect of personal force on moral dilemma judgements on Trolley dilemmas",
   centering=T,
   position="H"
   )%>%
@@ -200,11 +202,12 @@ kbl(
 
 ```
 
-Table S1 and S2 and Figures S1-4 summarizes the results of the effect of personal force on moral dilemma judgements, separately on Speedboat and Trolley dilemmas. First, we conducted the analysis with excluding participants based on our exclusion criteria. In this analysis, we replicated the effect of personal force in all cultural clusters, in both the Trolley and Speedboat dilemmas. We also analysed all data without exclusions - in both dilemmas, we arrive at the same conclusion; the effect of personal force on moral judgments is culturally universal; people judge acts that require no personal force more acceptable as acts that do. The "RR" column in the tables indicates the robustness region; a region for the prior with which we would arrive at the same conclusion. This region is very wide which indicates that there is no subjectivity in the results - we would arrive at the same conclusion even with unrealistically big and small priors. Although excluding a large number of our participants did not change the conclusion; it introduced some noise that differentially affected the cultural clusters. In the western cluster for example, the effect is less strong if we analyse the data after exclusions, while such difference cannot be observed on the two other cultural clusters. 
+Table S1 and S2 and Figures S1-4 summarise the results of the effect of personal force on moral dilemma judgements, separately for the Speedboat and Trolley dilemmas. First, we conducted the analysis excluding participants based on our exclusion criteria. In this analysis, we replicated the effect of personal force in all cultural clusters, in both the Trolley and Speedboat dilemmas. We also analysed the data without exclusions - in both dilemmas and we arrive at the same conclusion; the effect of personal force on moral judgments is culturally universal; people judge acts that require no personal force more acceptable than acts that do. The “RR” column in the tables indicates the robustness region; a region for the prior with which we would arrive at the same conclusion. This region is very wide, indicating that the results are robust to our prior choices. Although excluding the data of a large number of participants did not change the conclusion, it introduced some noise that differentially affected the cultural clusters. In the western cluster, for example, the t value (effect size) is  smaller if we analyse the data after exclusions, while such difference cannot be observed in the two other cultural clusters.
 
 
 <!-- //graph with exclusion -->
-```{r Study1a excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 when all exclusion criteria are applied. Black points are group level averages. There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1a excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with all exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+#ggbswarm
 
 full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -220,11 +223,11 @@ ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
 sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
 
 ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
-  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+  #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
   #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
@@ -239,7 +242,7 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study1a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 when no exclusion criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -255,11 +258,11 @@ ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
 sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
 
 ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
-  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+  #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
   facet_wrap(facets=vars(survey_name)) +
@@ -311,7 +314,7 @@ kbl(
   format = "latex",
   booktabs = T,
   escape=T,
-  caption = "Do personal force have an effect on moral dilemma judgements on Speedboat dilemmas?",
+  caption = " The effect of personal force on moral dilemma judgements on Speedboat dilemmas",
   centering=T,
   position="H"
   )%>%
@@ -322,7 +325,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r Study1b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 when all exclusion criteria are applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with all exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -338,11 +341,11 @@ ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
 sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
 
 ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
-  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+  #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
   #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
@@ -357,7 +360,7 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study1b w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 when no exclusion criteria is applied. Black points are group level averages.  There is an effect of personal force on each of the three clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1b w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -374,10 +377,10 @@ sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, 
 
 ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
   geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
-  geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.3), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.3), size = 2.5) +
+  #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
+  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
+  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
+  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
   #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
@@ -393,10 +396,8 @@ ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
 
 ##Study 2a and 2b
 
-We analysed the interactional effect of personal force and intention in a similar way (Tables S3 and S4, Figures S5-S8). We treatment coded both personal force (0 = no personal force; 1 = personal force) and intention (0 = no intention; 1 = intention), and added them to the model. In the Bayesian analysis, the Bayes factor represents the ratio of two Bayesian regression models (we always used the same priors for these models): the denominator model,a model with the two main effects but without the critical two way interaction, and in the numerator the full model including the inteeraction term. In case of the trolley dilemmas, we have very strong evidence (BF >10) to conclude that the interaction exists in the Western and Southern cultural clusters, but not in the Eastern cluster (where 1/10 < BF < 10, suggesting an inconclusive result). here, we believe is again a case of selection bias. When we analyse all the data, without exclusion, we manage to replicate the effect in all cultural clusters (BF > 10). The evidence however is more mixed for the Speedboat dilemmas. Here, we only find evidence for the interaction on the Western cluster, but we do not find an effect on the other two clusters. Although the BF only goes below our null threshold (eastern cluster - without exclusion), BF < 1 in this case makes the null hypothesis more likely then the alternative one.
+We analysed the interactional effect of personal force and intention in a similar way (Tables S3 and S4, Figures S5-S8). We treatment coded both personal force (0 = no personal force; 1 = personal force) and intention (0 = no intention; 1 = intention) and added them to the model. In the Bayesian analysis, the Bayes factor represents the ratio of two Bayesian regression models (we always used the same priors for these models): the denominator model, a model with the two main effects but without the critical two-way interaction, and in the numerator the full model including the interaction term. In case of the trolley dilemmas, we have strong evidence (BF >10) to conclude that the interaction exists in the Western and Southern cultural clusters, while in the Eastern cluster results are inconclusive ( 1/10 < BF < 10). Here, we believe is again a case of selection bias. When we analysed all the data, without exclusions, we replicated the effect in all cultural clusters (BF > 10). The evidence however is more mixed for the Speedboat dilemmas. Here, we found evidence only for the interaction on the Western cluster but we did not find an effect on the other two clusters. Although the BF goes below only our null threshold (eastern cluster - without exclusions), BF < 1 in this case makes the null hypothesis more likely than the alternative one.
 
-
-Since the exclusion criteria clearly induced a selection and affected our results in unexpected ways, we decided to analyse all the data (without any exclusions) from now on.
 
 ```{r Study2a Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -407,8 +408,8 @@ dat=subset(study2a, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate",
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2a[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
@@ -423,8 +424,8 @@ dat=subset(trolley_proc, survey_name==i, select=c("trolley_3_rate", "trolley_4_r
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2a_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
@@ -455,7 +456,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r Study2a excl graph,fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a excl graph,fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -482,7 +483,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r Study2a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention on all cultural clusters.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study2a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. ",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -511,7 +512,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ```{r study2b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 tabledata_s2b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
-
+##ggrepel grom_text repel
 for (i in survey){
 dat=subset(study2b, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -567,7 +568,7 @@ kbl(
 
 
 <!-- //graph with exclusion -->
-```{r study2b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -594,7 +595,7 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 
 <!-- //graph without exclusion -->
-```{r study2b w/o excl graph,fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean. We can observe a significant interaction between personal force and intention only on the Western cluster.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r study2b w/o excl graph,fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 
 full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
 full$survey_name=factor(full$survey_name)
@@ -619,50 +620,66 @@ ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
 
 ```
 
+The initial idea behind the exclusion critria was that by excluding certain people, we decrease noise and, as a result, we avoid false negative effects. For example, we thought that people failing the attention check questions do not paid enough attention to the task, or that people who were familiar with the trolley problem would respond with their knowledge of the trolley problem in mind, and that would result in a decreased effect of personal force. We observed the complete opposite; we observed a bigger effect size if there was no participants excluded in all cases previously analysed. This could mean either an increased random noise due to the decreased N, or a systematic bias that was intrudiced by a large number of exclusions (85% excluded overall). Hence, to avoid such biases, from this point, we applied no exclusion criteria. 
 
-#3. Effects of individualism-collectivism
+#3. Individualism-collectivism analysis
 
 ##Study 1a and 1b
+
+In the following analysis we used Bayesian and frequentist mixed effect models in which we added the random intercept of countries to all models. In the Bayesian analysis, the bayes factor is a comparison of the model in which there are only main effects (denominator) and the full model (including the main effects and interaction). We can see that regarding the effect of personal force, there is a strong evidence that no individual or country level measure of culture affects it, in fact, in 4, out of the 5 cases in the speedboat, and 5 out of 5 cases in the trolley dilemma we have strong evidence for a null effect.
+
 ```{r analysis individual + country level study 1a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
 #table has 5lines: country level individualism, then individual level measures
-
 vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s1a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
+graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
 
 trolley_proc$country3=factor(trolley_proc$country3)
 dat=subset(trolley_proc,  select=c("trolley_1_rate", "trolley_2_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_1_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
 
 for (i in vars){
   if(i=="Collectivism"){
-  datt=lmBF(rate ~  country3 + personal_force*Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*Collectivism +(1|country3), data=dat_long))
+  datt=lmBF(rate ~  personal_force*Collectivism+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:Collectivism"=0.26))
+  datt2=lmBF(rate ~  personal_force+Collectivism+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*Collectivism +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   } else if(i=="ver_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*ver_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*ver_ind+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:ver_ind"=0.26))
+  datt2=lmBF(rate ~   personal_force+ver_ind+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*ver_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*hor_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*hor_ind+country3, data=dat_long, whichRandom="country3", rscaleCont=c( "personal_force:hor_ind"=0.26))
+  datt2=lmBF(rate ~   personal_force+hor_ind+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*hor_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="ver_col"){
-  datt=lmBF(rate ~  country3 + personal_force*ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*ver_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*ver_col+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:ver_col"=0.26))
+  datt2=lmBF(rate ~   personal_force+ver_col+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*ver_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_col"){
-  datt=lmBF(rate ~  country3 + personal_force*hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*hor_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*hor_col+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:hor_col"=0.26))
+  datt2=lmBF(rate ~  personal_force+hor_col+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*hor_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }
 datt3=as_tibble(datt/datt2)
-tabledata_s1a_ind[i, "BF"]=signif(round(datt3[1,1],1),2)
+tabledata_s1a_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s1a_ind[i, "b"]=round(frequentist[4, "estimate"],3)
 tabledata_s1a_ind[i, "p"]=round(frequentist[4, "p.value"],3)
+graphdata[i, "b"]=round(frequentist[4, "estimate"],3)
+graphdata[i, "lower"]=round(confint(frequentist_m),2)[6,1]
+graphdata[i, "higher"]=round(confint(frequentist_m),2)[6,2]
+
 }
+graphdata=graphdata[-1,]
 
 rownames(tabledata_s1a_ind) <- NULL
 
@@ -680,8 +697,6 @@ kbl(
 
 ```
 
-In the following analysis we used Bayesian and frequentist miwed effect models in whihc we added the random intercept of countries to all models. IN the Bayesian analysis, the bayes faktor is a comparison of the model in which there are only main effects (denominator) and the full model (including the main effects and interaction). 
-We can see that regarding theeffect of personal force, there is a strong evidence that no individual or country level measure of culture affects it, in fact, in 4, out of the 5 cases in the speedboat, and 5 out of 5 cases in the trolley dilemma we have strong evidence for a null effect. 
 
 <!-- Bayesian country level individualism w/o exclusion  -->
 ```{r study1a overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -701,7 +716,7 @@ countrydata=na.omit(countrydata)
 ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
   geom_point(aes(size=N))+
   geom_text(hjust=-0.2,size=3)+
-  geom_smooth(method=lm, se=F)+ 
+geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+
   xlab("Effect size")+
   theme_bw()+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
@@ -713,7 +728,7 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 ```
 
 <!-- Bayesian personal level individualism  w/o exclusion -->
-```{r study1a vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the Trolley dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study1a vertical horizontal individualism,  out.width="80%", fig.cap="Personal level individualism/collectivism effects on the Trolley dilemmas. Beta effect size of the interaction ", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
 ind=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
@@ -721,43 +736,19 @@ ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("v
 ind2$condition=plyr::mapvalues(ind2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
 ind2=na.omit(ind2)
 
-  ggplot(ind2, aes(x=hor_ind, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+###ggplot bargraph
+
+ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
+ geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
+  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
+  labs( y="Beta effect size")+ theme_bw()+
+  geom_hline(yintercept=0)+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
-)
-  
-  ggplot(ind2, aes(x=ver_ind, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical individualism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
-  
-  ggplot(ind2, aes(x=hor_col, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
-    
-  ggplot(ind2, aes(x=ver_col, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical collectivism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
 
 
+ 
 ```
 
 
@@ -768,38 +759,51 @@ ind2=na.omit(ind2)
 vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s1b_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
+graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
 
 dat=subset(trolley_proc,  select=c("speedboat_1_rate", "speedboat_2_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_1_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
 
 for (i in vars){
   if(i=="Collectivism"){
-  datt=lmBF(rate ~  country3 + personal_force*Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*Collectivism +(1|country3), data=dat_long))
+  datt=lmBF(rate ~  personal_force*Collectivism+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:Collectivism"=0.26))
+  datt2=lmBF(rate ~  personal_force+Collectivism+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*Collectivism +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   } else if(i=="ver_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*ver_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*ver_ind+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:ver_ind"=0.26))
+  datt2=lmBF(rate ~   personal_force+ver_ind+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*ver_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*hor_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*hor_ind+country3, data=dat_long, whichRandom="country3", rscaleCont=c( "personal_force:hor_ind"=0.26))
+  datt2=lmBF(rate ~   personal_force+hor_ind+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*hor_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="ver_col"){
-  datt=lmBF(rate ~  country3 + personal_force*ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*ver_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*ver_col+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:ver_col"=0.26))
+  datt2=lmBF(rate ~   personal_force+ver_col+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*ver_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_col"){
-  datt=lmBF(rate ~  country3 + personal_force*hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~  country3 + personal_force+hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*hor_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*hor_col+country3, data=dat_long, whichRandom="country3",  rscaleCont=c( "personal_force:hor_col"=0.26))
+  datt2=lmBF(rate ~  personal_force+hor_col+country3, data=dat_long, whichRandom="country3")
+  frequentist_m=lmer(rate ~ personal_force*hor_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }
 datt3=as_tibble(datt/datt2)
-tabledata_s1b_ind[i, "BF"]=signif(round(datt3[1,1],1),2)
+tabledata_s1b_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s1b_ind[i, "b"]=round(frequentist[4, "estimate"],3)
 tabledata_s1b_ind[i, "p"]=round(frequentist[4, "p.value"],3)
+graphdata[i, "b"]=round(frequentist[4, "estimate"],3)
+graphdata[i, "lower"]=round(confint(frequentist_m),2)[6,1]
+graphdata[i, "higher"]=round(confint(frequentist_m),2)[6,2]
+
 }
+graphdata=graphdata[-1,]
 
 rownames(tabledata_s1b_ind) <- NULL
 
@@ -818,9 +822,7 @@ kbl(
 
 <!-- Bayesian country level individualism w/o exclusion> -->
 ```{r study1b overall individualism plot, fig.pos="H",out.width="80%",fig.cap="Correlation between country-level individualism/collectivism and the effect of personal force in Cohen D on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-##cohen d calculation for every country
-#scatterplot: x effect size, y individualism
-#size of dots: cohen d
+
 countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
 
 for (i in levels(factor(trolley_proc$country3))){
@@ -834,7 +836,7 @@ countrydata=na.omit(countrydata)
 ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
   geom_point(aes(size=N))+
   geom_text(hjust=-0.2,size=3)+
-  geom_smooth(method=lm, se=F)+ 
+geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+
   xlab("Effect size")+
   theme_bw()+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
@@ -847,49 +849,20 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 
 
 <!-- Bayesian personal level individualism  w/o exclusion-->
-```{r study1b vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study1b vertical horizontal individualism,  out.width="80%", fig.cap="Personal level individualism/collectivism effects on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
-ind=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2$condition=plyr::mapvalues(ind2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
-ind2=na.omit(ind2)
 
-  ggplot(ind2, aes(x=hor_ind, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+
+ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
+ geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
+  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
+  labs( y="Beta effect size")+ theme_bw()+
+  geom_hline(yintercept=0)+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
-)
-  
-  ggplot(ind2, aes(x=ver_ind, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical individualism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
-  
-  ggplot(ind2, aes(x=hor_col, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
-    
-  ggplot(ind2, aes(x=ver_col, y=rate, color=condition)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical collectivism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
+
 
 
 ```
@@ -897,7 +870,8 @@ ind2=na.omit(ind2)
 
 ##Study 2a and 2b
 
-We applied similar analysis strategy as before: we compared the full model (including the three way interaction) with a model that includes all main effects and interactions but the three-way interaction. Here, the results are somewhat fuzzier. IN the trolley dilemma, the frequentist test shows a significant effect of both country level and horizontal collectivism, but the Bayes Faktor shows the contrary; that the null effect is more likely to be true than the alternative. This comes from the differences between the two tests; the frequentuists compares to the intercept, while the Bayesian to an alternative model. Even if the effect exists it cannot be generalized to the speedboat dilemmas. 
+We applied similar analysis strategy as before: we compared the full model (including the three way interaction) with a model that includes all main effects and interactions but the three-way interaction. Here, the results are somewhat fuzzier. IN the trolley dilemma, the frequentist test shows a significant effect of both country level and horizontal collectivism, but the Bayes Faktor shows the contrary; that the null effect is more likely to be true than the alternative. This comes from the differences between the two tests; the frequentists compares to the intercept, while the Bayesian to an alternative model. Even if the effect exists it cannot be generalized to the speedboat dilemmas.
+
 
 <!-- Bayesian country level individualism w/o exclusion -->
 ```{r analysis individual + country level study 2a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -912,36 +886,51 @@ dat=subset(trolley_proc,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
+graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
 
 for (i in vars){
   if(i=="Collectivism"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism, whichRandom=dat_long$country3,data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*Collectivism + country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:Collectivism" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   } else if(i=="ver_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3+personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind, whichRandom=dat_long$country3,      data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*ver_ind+country3, data=dat_long,  whichRandom="country3",  rscaleCont = c("personal_force:intention:ver_ind" = 0.19))
+  datt2=lmBF(rate ~ personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind +country3,  whichRandom="country3", data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind, whichRandom=dat_long$country3, data=dat_long,  rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="ver_col"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col, whichRandom=dat_long$country3,      data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*ver_col+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:ver_col" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col +country3,  whichRandom="country3",  data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_col"){
-  datt=lmBF(rate ~  country3 + personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col+personal_force:intention:hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col, whichRandom=dat_long$country3,   data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~  personal_force*intention*hor_col+country3, data=dat_long, whichRandom="country3", rscaleCont = c("personal_force:intention:hor_col" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col +country3,  whichRandom="country3",   data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }
 datt3=as_tibble(datt/datt2)
-tabledata_s2a_ind[i, "BF"]=signif(round(datt3[1,1],1),2)
+tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
+graphdata[i, "b"]=round(frequentist[8, "estimate"],3)
+graphdata[i, "lower"]=round(confint(frequentist_m),2)[10,1]
+graphdata[i, "higher"]=round(confint(frequentist_m),2)[10,2]
+
 }
 
+graphdata=graphdata[-1,]
 rownames(tabledata_s2a_ind) <- NULL
+
 
 kbl(
   tabledata_s2a_ind,
@@ -982,8 +971,7 @@ countrydata=na.omit(countrydata)
 ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
   geom_point(aes(size=N))+
   geom_text(hjust=-0.2,size=3)+
-  geom_smooth(method=lm, se=F)+ 
-  xlab("Effect size")+
+geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+xlab("Effect size")+
   theme_bw()+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
         axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
@@ -995,56 +983,17 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 
 
 <!-- Bayesian personal level individualism  w/o exclusion-->
-```{r study2a vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (trolley dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study2a vertical horizontal individualism, out.width="80%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (trolley dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
 
-ind=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2$personal_force = factor(ifelse(ind2$condition=="trolley_3_rate"|ind2$condition=="trolley_5_rate", 0, 1), labels=c("No personal force","Personal force"))
-ind2$intention = factor(ifelse(ind2$condition=="trolley_4_rate"|ind2$condition=="trolley_5_rate", 1, 0), labels=c("No intention", "Intention"))
-
-ind2=na.omit(ind2)
-
-  ggplot(ind2, aes(x=hor_ind, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
+ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
+ geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
+  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
+  labs( y="Beta effect size")+ theme_bw()+
+  geom_hline(yintercept=0)+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
-)
-  
-  ggplot(ind2, aes(x=ver_ind, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical individualism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
-  
-  ggplot(ind2, aes(x=hor_col, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
-    
-  ggplot(ind2, aes(x=ver_col, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical collectivism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
 
 
 ```
@@ -1059,39 +1008,55 @@ ind2=na.omit(ind2)
 vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2b_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
+graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
+
 
 dat=subset(trolley_proc,  select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
 
 for (i in vars){
   if(i=="Collectivism"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*Collectivism, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism, whichRandom=dat_long$country3,data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*Collectivism + country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:Collectivism" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   } else if(i=="ver_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*ver_ind, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3+personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind, whichRandom=dat_long$country3,      data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*ver_ind+country3, data=dat_long,  whichRandom="country3",  rscaleCont = c("personal_force:intention:ver_ind" = 0.19))
+  datt2=lmBF(rate ~ personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind +country3,  whichRandom="country3", data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*hor_ind, data=dat_long, whichRandom=dat_long$country3, rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind, whichRandom=dat_long$country3, data=dat_long,  rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="ver_col"){
-  datt=lmBF(rate ~  country3 + personal_force*intention*ver_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col, whichRandom=dat_long$country3,      data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~   personal_force*intention*ver_col+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:ver_col" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col +country3,  whichRandom="country3",  data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_col"){
-  datt=lmBF(rate ~  country3 + personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col+personal_force:intention:hor_col, data=dat_long, whichRandom=dat_long$country3,  rscaleFixed=0.26)
-  datt2=lmBF(rate ~ country3 + personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col, whichRandom=dat_long$country3,   data=dat_long, rscaleFixed=0.26)  
-  frequentist=broom.mixed::tidy(lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long))
+  datt=lmBF(rate ~  personal_force*intention*hor_col+country3, data=dat_long, whichRandom="country3", rscaleCont = c("personal_force:intention:hor_col" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col +country3,  whichRandom="country3",   data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
   }
 datt3=as_tibble(datt/datt2)
-tabledata_s2b_ind[i, "BF"]=signif(round(datt3[1,1],1),2)
+tabledata_s2b_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2b_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2b_ind[i, "p"]=round(frequentist[8, "p.value"],3)
+graphdata[i, "b"]=round(frequentist[8, "estimate"],3)
+graphdata[i, "lower"]=round(confint(frequentist_m),2)[10,1]
+graphdata[i, "higher"]=round(confint(frequentist_m),2)[10,2]
+
 }
+
+graphdata=graphdata[-1,]
 
 rownames(tabledata_s2b_ind) <- NULL
 
@@ -1136,7 +1101,7 @@ countrydata=na.omit(countrydata)
 ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
   geom_point(aes(size=N))+
   geom_text(hjust=-0.2,size=3)+
-  geom_smooth(method=lm, se=F)+ 
+  geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+
   xlab("Effect size")+
   theme_bw()+
   theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
@@ -1149,56 +1114,18 @@ ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
 
 
 <!-- Bayesian personal level individualism  w/o exclusion-->
-```{r study2b vertical horizontal individualism, fig.show="hold", out.width="50%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (speedboat dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r study2b vertical horizontal individualism,  out.width="80%", fig.cap="Personal level individualism/collectivism effects on the interaction of personal force and intention (speedboat dilemmas)", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-#line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
 
-ind=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2=melt(data=ind, variable.name = "condition", value.name="rate", id.vars=c("ver_ind", "ver_col", "hor_ind", "hor_col"))
-ind2$personal_force = factor(ifelse(ind2$condition=="speedboat_3_rate"|ind2$condition=="speedboat_5_rate", 0, 1), labels=c("No personal force","Personal force"))
-ind2$intention = factor(ifelse(ind2$condition=="speedboat_4_rate"|ind2$condition=="speedboat_5_rate", 1, 0), labels=c("No intention", "Intention"))
+ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
+ geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
+  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
+  labs( y="Beta effect size")+ theme_bw()+
+  geom_hline(yintercept=0)+
+  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
+        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
+        legend.title=element_blank(),legend.text=element_text(size=9))
 
-ind2=na.omit(ind2)
-
-  ggplot(ind2, aes(x=hor_ind, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal individualism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9),legend.position = c(.95, .95),legend.justification = c("right", "top"),legend.box.just = "right",legend.margin = margin(6, 6, 6, 6)
-)
-  
-  ggplot(ind2, aes(x=ver_ind, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical individualism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
-  
-  ggplot(ind2, aes(x=hor_col, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Horizontal collectivism", y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),legend.title=element_blank(),legend.position="none")
-    
-  ggplot(ind2, aes(x=ver_col, y=rate, color=personal_force)) +
-  geom_smooth(method=lm)+
-  labs( x= "Vertical collectivism", y="")+ theme_bw()+
-  expand_limits(y=c(1,9))+
-  facet_wrap(facets=vars(intention))+
-  scale_color_manual(values = c("#0000FF", "#FF0000"))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.y=element_text(face="bold", size=12), axis.text.x = element_text(face="bold", size=9, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.position="none")
 
 
 ```
