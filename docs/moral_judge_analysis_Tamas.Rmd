@@ -192,6 +192,10 @@ exclusions <-
   mutate(Region = str_remove(survey_name, "PSA006_")) %>% 
   group_by(Region)
 
+all_responses <- 
+  exclusions %>% 
+    count(Region, name = "all")
+
 exclude_careless <- 
   exclusions %>% 
   filter(careless_1 == 1 | careless_2 == 1 | careless_3 == 2) %>% 
@@ -260,7 +264,7 @@ exclude_study2b <-
             .groups = "drop")
 
 
-
+all_responses
 exclude_careless
 exclude_confusion
 exclude_familiar
@@ -271,7 +275,7 @@ exclude_study1b
 exclude_study2a
 exclude_study2b
 
-exclude_all <- 
+exclude_all <-
   bind_rows(exclude_careless,
             exclude_confusion,
             exclude_familiar,
@@ -281,22 +285,33 @@ exclude_all <-
             exclude_study1b,
             exclude_study2a,
             exclude_study2b) %>% 
-  pivot_wider(names_from = "Region", values_from = n) %>% 
-  mutate(All = Eastern + Southern + Western)
-
-
-
+  left_join(all_responses, by = "Region") %>% 
+  mutate(perc = n / all) %>% 
+  select(-all) %>% 
+  pivot_wider(names_from = "Region", 
+              values_from = c(n, perc)) %>% 
+  mutate(n_All = n_Eastern + n_Southern + n_Western,
+         perc_All = n_All/nrow(trolley_proc))
+  
 # Exclusion reason by region (excluded participants can overlap!)
 exclude_table <-
   exclude_all %>% 
   gt() %>% 
-  fmt_number(vars(Eastern, Southern, Western, All), 
-             decimals = 0) %>% 
-  # grand_summary_rows(vars(Eastern, Southern, Western, All),
-  #                    fns = list(All = "sum"), 
-  #                    formatter = fmt_number,
-  #                    decimals = 0) %>% 
-  cols_label(Reason = "Reason to exclude") %>% 
+  fmt_number(vars(n_Eastern, n_Southern, n_Western, n_All), decimals = 0) %>%
+  fmt_percent(columns = vars(perc_Eastern, perc_Southern, perc_Western, perc_All), decimals = 1) %>%
+  cols_merge(columns = vars(n_Eastern, perc_Eastern), 
+             pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_Southern, perc_Southern), 
+             pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_Western, perc_Western), 
+           pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_All, perc_All), 
+       pattern = "{1} ({2})") %>% 
+  cols_label(Reason = "Reason to exclude",
+             n_Eastern = "Eastern",
+             n_Southern = "Southern",
+             n_Western = "Western",
+             n_All = "All") %>% 
   tab_options(row.striping.include_table_body = TRUE,
               row.striping.background_color = "#EEEEEE", 
               row.striping.include_stub = TRUE,
@@ -305,8 +320,8 @@ exclude_table <-
 
 exclude_table
 
-gtsave(exclude_table_region, "docs/exclude_table.html")
+gtsave(exclude_table, "docs/exclude_table.html")
 
 ```
 
-# Create
+
