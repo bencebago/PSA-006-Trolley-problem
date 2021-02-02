@@ -229,31 +229,32 @@ exclude_nonnative <-
 
 exclude_study1a <- 
   exclusions %>%
-  left_join(correct_answers_1, by = "scenario1") %>% 
-  filter(trolley_attention == trolley_answer) %>%
+  right_join(correct_answers_1, by = "scenario1") %>% 
+  filter(trolley_attention != trolley_answer) %>%
   summarise(Reason = "Failed attention check (Study1a)",
             n = n(), 
             .groups = "drop")
 
 exclude_study1b <- 
   exclusions %>% 
-  left_join(correct_answers_1, by = "scenario1") %>% 
+  right_join(correct_answers_1, by = "scenario1") %>% 
+  filter(speedboat_attention != speedboat_answer) %>%
   summarise(Reason = "Failed attention check (Study1b)",
             n = n(), 
             .groups = "drop")
 
 exclude_study2a <-
   exclusions %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  filter(trolley_attention == trolley_answer) %>%
+  right_join(correct_answers_2, by = "scenario2") %>% 
+  filter(trolley_attention != trolley_answer) %>%
   summarise(Reason = "Failed attention check (Study2a)",
             n = n(), 
             .groups = "drop")
 
 exclude_study2b <-
   exclusions %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  filter(speedboat_attention == speedboat_answer) %>%
+  right_join(correct_answers_2, by = "scenario2") %>% 
+  filter(speedboat_attention != speedboat_answer) %>%
   summarise(Reason = "Failed attention check (Study2b)",
             n = n(), 
             .groups = "drop")
