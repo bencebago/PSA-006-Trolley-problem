@@ -1420,8 +1420,6 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 
 ```
 
-
-
 #4. Additional analysis
 ##Effect of physical contact and intention
 
@@ -1505,9 +1503,7 @@ additional_res_2 %>%
     escape = TRUE)
 ```
 
-
 ##Oxford utilitarianism Scale
-<!-- Oxford Utilitarianism Scale <MARCI> -->
 
 ```{r}
 # Prepare data for plotting
@@ -1559,5 +1555,43 @@ plot_data %>%
     axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
     legend.title = element_blank(),
     legend.text = element_text(size = 9))
+```
+
+#Table 1
+
+```{r}
+### Some country codes are not standard iso codes; replace
+custom_countries <- 
+  c("LEB" = "LBN", 
+    "BUL" = "BGR", 
+    "SPA" = "ESP", 
+    "SWT" = "CHE",
+    "PSA" = "USA")
+
+# Transform data for the table
+## Table 1 represents the countries who collected data for the study
+## in the three investigated clusters
+table_data <- 
+  trolley_raw %>% 
+  select(survey_name, lab) %>%
+  drop_na(lab) %>% 
+  transmute(country3 = str_extract(lab, "[A-Z]+") %>% 
+              recode(., !!!custom_countries),
+         region = str_remove(survey_name, "PSA006_"),
+         Country = countrycode(sourcevar = country3, 
+                                      origin = "iso3c",
+                                      destination = "country.name")) %>% 
+  distinct(region, Country)
+
+table_data <- 
+  table_data %>% 
+  pivot_wider(names_from = region, values_from = Country)
+
+# Create APA formatted table
+papaja::apa_table(
+  table_data,
+  caption = "The Cultural Classification of Countries of Participating Labs Following Awad et al.",
+  escape = TRUE
+)
 ```
 
