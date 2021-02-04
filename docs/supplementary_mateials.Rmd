@@ -104,6 +104,14 @@ study2b <-
   left_join(correct_answers_2, by = "scenario2") %>% 
   filter(speedboat_attention == speedboat_answer) %>%
   select(-trolley_answer, -speedboat_answer)
+
+raw=levels(factor(trolley_raw$lab))
+
+processed=levels(factor(trolley_proc$lab))
+
+k=setdiff(raw,processed)
+f=trolley_raw[trolley_raw$lab %in% k ,]
+table(f$lab)
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
