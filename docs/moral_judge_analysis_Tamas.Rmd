@@ -72,8 +72,13 @@ process_study <- function(data = NULL){
   data %>% 
     transmute(id = ResponseId,
             country3 = str_extract(lab, "[A-Z]+") %>% 
-            # Some country codes are not standard iso codes; replace
+            # Some country codes are not standard iso3 codes; replace
                        recode(., !!!custom_countries),
+            # Some labs collected data in other countries; correct
+            country3 = case_when(lab == "GBR_001" ~ "PAK",
+                                 lab == "GBR_031" ~ "BRA",
+                                 lab == "GBR_060" ~ "DNK",
+                                 TRUE ~ country3),
             Region = str_remove(survey_name, "PSA006_"),
             # Age is a multiple choice question that starts at 18
             Age = age_1 + 17,
@@ -302,7 +307,7 @@ exclude_all <-
   
 
 # Exclusion reason by region (excluded participants can overlap!)
-# exclude_table <-
+exclude_table <-
   exclude_all %>% 
   bind_rows(all_wide) %>% 
   group_by(info) %>% 
@@ -319,16 +324,23 @@ exclude_all <-
            pattern = "{1} ({2})") %>% 
   cols_merge(columns = vars(n_All, perc_All), 
        pattern = "{1} ({2})") %>% 
-  cols_label(Reason = "Reason to exclude",
+  cols_label(Reason = " ",
              n_Eastern = "Eastern",
              n_Southern = "Southern",
              n_Western = "Western",
              n_All = "All") %>% 
-  cols_align("right") %>% 
+  cols_align("left", columns = "Reason") %>%
+  cols_align("right", columns = vars(n_Eastern, n_Southern, n_Western, n_All)) %>%
   tab_options(row.striping.include_table_body = TRUE,
               row.striping.background_color = "#EEEEEE", 
               row.striping.include_stub = TRUE,
-              column_labels.background.color = "#999999")
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999") %>% 
+  text_transform(locations = cells_body(
+                 columns = vars(n_Eastern, n_Southern, n_Western, n_All)),
+                          fn = function(x) {if_else(str_detect(x, "()"), 
+                                        str_remove(x, "\\(\\)"),
+                                        x)})
 
 exclude_table
 
