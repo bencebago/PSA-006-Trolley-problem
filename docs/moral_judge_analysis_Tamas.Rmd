@@ -72,8 +72,13 @@ process_study <- function(data = NULL){
   data %>% 
     transmute(id = ResponseId,
             country3 = str_extract(lab, "[A-Z]+") %>% 
-            # Some country codes are not standard iso codes; replace
+            # Some country codes are not standard iso3 codes; replace
                        recode(., !!!custom_countries),
+            # Some labs collected data in other countries; correct
+            country3 = case_when(lab == "GBR_001" ~ "PAK",
+                                 lab == "GBR_031" ~ "BRA",
+                                 lab == "GBR_060" ~ "DNK",
+                                 TRUE ~ country3),
             Region = str_remove(survey_name, "PSA006_"),
             # Age is a multiple choice question that starts at 18
             Age = age_1 + 17,
@@ -173,7 +178,7 @@ summaries$gtable
 summaries$gtable[[1]] 
 
 # Save
-gtsave(summaries$gtable[[1]], "docs/table1.html")
+gtsave(summaries$gtable[[1]], "docs/demo_table.html")
 
 ```
 
@@ -194,7 +199,8 @@ exclusions <-
 
 all_responses <- 
   exclusions %>% 
-    count(Region, name = "all")
+
+    count(Region, name = "all", .drop = TRUE)
 
 exclude_careless <- 
   exclusions %>% 
@@ -262,18 +268,23 @@ exclude_study2b <-
   summarise(Reason = "Failed attention check (Study2b)",
             n = n(), 
             .groups = "drop")
-
-
-all_responses
-exclude_careless
-exclude_confusion
-exclude_familiar
-exclude_techproblem
-exclude_nonnative
-exclude_study1a
-exclude_study1b
-exclude_study2a
-exclude_study2b
+all_wide <-
+  list.files(here::here("data/"), 
+                        pattern = "study...csv", 
+                        full.names = TRUE) %>% 
+  set_names(.) %>% 
+  map_dfr(read_csv, .id = "file") %>% 
+  extract(file, into = "study", regex = ".*/(.*).csv$") %>% 
+  transmute(study, 
+            Region = str_remove(survey_name, "PSA006_")) %>% 
+  count(study, Region) %>%  
+  pivot_wider(names_from = "Region", 
+              values_from = "n", 
+              names_prefix = "n_") %>% 
+  mutate(info = "Final sample",
+         n_All = n_Eastern + n_Southern + n_Western,
+         Reason = str_glue("{str_to_sentence(study)}")) %>% 
+  select(-study)
 
 exclude_all <-
   bind_rows(exclude_careless,
@@ -291,14 +302,20 @@ exclude_all <-
   pivot_wider(names_from = "Region", 
               values_from = c(n, perc)) %>% 
   mutate(n_All = n_Eastern + n_Southern + n_Western,
-         perc_All = n_All/nrow(trolley_proc))
+         perc_All = n_All/nrow(trolley_proc),
+         info = "Reason to exclude")
   
+
 # Exclusion reason by region (excluded participants can overlap!)
 exclude_table <-
   exclude_all %>% 
+  bind_rows(all_wide) %>% 
+  group_by(info) %>% 
   gt() %>% 
-  fmt_number(vars(n_Eastern, n_Southern, n_Western, n_All), decimals = 0) %>%
+  fmt_number(vars(n_Eastern, n_Southern, n_Western, n_All), 
+             decimals = 0) %>%
   fmt_percent(columns = vars(perc_Eastern, perc_Southern, perc_Western, perc_All), decimals = 1) %>%
+  fmt_missing(everything(), missing_text = "") %>%
   cols_merge(columns = vars(n_Eastern, perc_Eastern), 
              pattern = "{1} ({2})") %>% 
   cols_merge(columns = vars(n_Southern, perc_Southern), 
@@ -307,16 +324,23 @@ exclude_table <-
            pattern = "{1} ({2})") %>% 
   cols_merge(columns = vars(n_All, perc_All), 
        pattern = "{1} ({2})") %>% 
-  cols_label(Reason = "Reason to exclude",
+  cols_label(Reason = " ",
              n_Eastern = "Eastern",
              n_Southern = "Southern",
              n_Western = "Western",
              n_All = "All") %>% 
+  cols_align("left", columns = "Reason") %>%
+  cols_align("right", columns = vars(n_Eastern, n_Southern, n_Western, n_All)) %>%
   tab_options(row.striping.include_table_body = TRUE,
               row.striping.background_color = "#EEEEEE", 
               row.striping.include_stub = TRUE,
-              column_labels.background.color = "#999999", 
-              )
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999") %>% 
+  text_transform(locations = cells_body(
+                 columns = vars(n_Eastern, n_Southern, n_Western, n_All)),
+                          fn = function(x) {if_else(str_detect(x, "()"), 
+                                        str_remove(x, "\\(\\)"),
+                                        x)})
 
 exclude_table
 

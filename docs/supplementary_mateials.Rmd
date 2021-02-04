@@ -15,12 +15,12 @@ editor_options:
 
 \beginsupplement
 ```{r setup, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+# Load packages
 library(BayesFactor)
 library(reshape2)
 library(ggplot2)
 library(kableExtra)
 library(lmerTest)
-
 library(tidyverse)
 library(jsonlite)
 library(lubridate)
@@ -28,95 +28,21 @@ library(vroom)
 library(countrycode)
 library(gt)
 library(janitor)
+library(here)
+library(ggrepel)
 
-##weighted least squares regression lm
-
-setwd('C:/Users/Bence/Documents/PSA-006-Trolley-problem')
-
-trolley_raw <- vroom("data/trolley_raw.csv")
-
-# Correct answers for attention check for the tasks
-correct_answers_1 <- read_csv("meta_data/correct_answers_1.csv")
-correct_answers_2 <- read_csv("meta_data/correct_answers_2.csv")
-
-# Remove all trial runs and incomplete surveys
-trolley_proc <-
-  trolley_raw %>% 
-  # Aggregate randomization variables
-  mutate(scenario1 = case_when(FL_24_DO_Footbridgepole == 1 ~ "Pole",
-                               FL_24_DO_Footbridgeswitch == 1 ~ "Switch",
-                               TRUE ~ NA_character_),
-         scenario2 = case_when(FL_22_DO_Standardswitch == 1 ~ "Standardswitch",
-                               FL_22_DO_Standardfootbridge == 1 ~ "Standardfootbridge",
-                               FL_22_DO_Loop == 1 ~ "Loop",
-                               FL_22_DO_Obstaclecollide == 1 ~ "Obstaclecollide",
-                               TRUE ~ NA_character_)) %>% 
-  # Remove those who didn't finish the questionnaire
-  filter(Progress >= 98) %>% 
-  # Remove all practice runs
-  filter(str_detect(str_to_lower(practice), "false")) %>% 
-  # Remove the answers for a particular lab that has unflagged practice data
-  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
-         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-         !(lab == "USA_095"))
-
-# write_csv(trolley_proc, "data/trolley_preprocessed.csv")
-
-# Exclude participants specified in the preregistration
-trolley <-
-  trolley_proc %>% 
-  # Exclude careless responders
-  filter_at(vars(careless_1, careless_2), all_vars(. != 1)) %>%
-  filter(careless_3 != 2) %>%
-  # Remove confused participants 
-  filter(confusion != 3) %>%
-  # Exclude those with familiarity of the topic
-  filter(familiarity <= 3) %>%
-  # Technical problems is not in the master questionnaire!
-  filter(technical_problems != 2) %>% 
-  # Exclude those who did not fill the questionnaire on their native language
-  filter(native_language != 2)
-
-# Remove those who can't tell which scenarios they saw
-# Use the correct answer descriptions as attention check for the tasks
-# Only those are kept who answered either of the tasks correctly
-
-study1a <- 
-  trolley %>%
-  left_join(correct_answers_1, by = "scenario1") %>% 
-  filter(trolley_attention == trolley_answer) %>%
-  select(-trolley_answer, -speedboat_answer)
-
-study1b <- 
-  trolley %>% 
-  left_join(correct_answers_1, by = "scenario1") %>% 
-  filter(speedboat_attention == speedboat_answer) %>%
-  select(-trolley_answer, -speedboat_answer)
-
-study2a <-
-  trolley %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  filter(trolley_attention == trolley_answer) %>%
-  select(-trolley_answer, -speedboat_answer)
-
-study2b <-
-  trolley %>% 
-  left_join(correct_answers_2, by = "scenario2") %>% 
-  filter(speedboat_attention == speedboat_answer) %>%
-  select(-trolley_answer, -speedboat_answer)
-
-raw=levels(factor(trolley_raw$lab))
-
-processed=levels(factor(trolley_proc$lab))
-
-k=setdiff(raw,processed)
-f=trolley_raw[trolley_raw$lab %in% k ,]
-table(f$lab)
+# Import data
+trolley_raw <- vroom(here("data/trolley_raw.csv"))
+trolley_proc <- vroom(here("data/trolley_preprocessed.csv"))
+study1a <- vroom(here("data/study1a.csv"))
+study1b <- vroom(here("data/study1b.csv"))
+study2a <- vroom(here("data/study2a.csv"))
+study2b <- vroom(here("data/study2b.csv"))
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-cd_raw <- read_csv(here::here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
+cd_raw <- read_csv(here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
 
 cd <- 
   cd_raw %>% 
@@ -214,77 +140,157 @@ Table S1 and S2 and Figures S1-4 summarise the results of the effect of personal
 
 
 <!-- //graph with exclusion -->
-```{r Study1a excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with all exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
-#ggbswarm
-
-full=subset(study1a, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$condition=plyr::mapvalues(full2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
-
+```{r Study1a excl graph, fig.pos = "H" ,out.width = "80%", fig.cap = "Results on Trolley dilemmas in Study 1 with all exclusion criteria applied. Black full circles indicate group level means.", echo = FALSE, message = FALSE, warning = FALSE, paged.print = FALSE }
+# Load violin plot function
 source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
-lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
-ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
 
-sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
+# Prepare data for plotting
+plot_data <- 
+  study1a %>% 
+  select(survey_name, trolley_1_rate, trolley_2_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    - survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(condition = case_when(condition == "trolley_1_rate" ~ "Personal Force",
+                               condition == "trolley_2_rate" ~ "No personal force"),
+         condition = factor(condition, levels = c("Personal Force", "No personal force")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+sumld <- 
+  plot_data %>% 
+  group_by(survey_name, condition) %>% 
+  summarise(mean = mean(rate, na.rm = T),
+            median = median(rate, na.rm = T),
+            sd = sd(rate, na.rm = T),
+            lower = mean - sd,
+            upper = mean + sd)
+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = condition,
+    y = rate,
+    fill = condition) +
+  geom_flat_violin(
+    position = position_nudge(x = 0, y = 0),
+    alpha = .8) +
   #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
+  stat_summary(
+    fun = mean,
+    geom = "line",
+    aes(group = 1),
+    position = position_nudge(x = 0.1),
+    size = 1) +
+  geom_line(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
+  geom_point(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
   #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
-  facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  scale_fill_viridis_d() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) + 
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major=element_blank(),
+    panel.grid.minor=element_blank(),
+    plot.title=element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x=element_blank(),
+    axis.title.y=element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title=element_blank(),
+    legend.text=element_text(size = 9))
 ```
 
 
 <!-- //graph without exclusion -->
-```{r Study1a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+```{r Study1a w/o excl graph, fig.pos = "H",out.width = "80%",fig.cap = "Results on Trolley dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo = FALSE, message = FALSE, warning = FALSE, paged.print = FALSE }
+# Prepare data for plotting
+plot_data <- 
+  trolley_proc %>% 
+  select(survey_name, trolley_1_rate, trolley_2_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(condition = case_when(condition == "trolley_1_rate" ~ "Personal Force",
+                               condition == "trolley_2_rate" ~ "No personal force"),
+         condition = factor(condition, levels = c("Personal Force", "No personal force")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(trolley_proc, select=c("trolley_1_rate", "trolley_2_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$condition=plyr::mapvalues(full2$condition, from=c("trolley_1_rate", "trolley_2_rate"), to=c("Personal Force", "No personal force"))
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
+sumld <- 
+  plot_data %>% 
+  group_by(survey_name, condition) %>% 
+  summarise(mean = mean(rate, na.rm = T),
+            median = median(rate, na.rm = T),
+            sd = sd(rate, na.rm = T),
+            lower = mean - sd,
+            upper = mean + sd)
 
-source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
-lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
-ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
-
-sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
-
-ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = condition,
+    y = rate,
+    fill = condition) +
+  geom_flat_violin(
+    position = position_nudge(x = 0, y = 0),
+    alpha = .8)+
   #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
+  stat_summary(
+    fun = mean,
+    geom = "line",
+    aes(group = 1),
+    position = position_nudge(x = 0.1),
+    size = 1) +
+  geom_line(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
+  geom_point(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
-  facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  scale_fill_viridis_d() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) + 
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
 
-
 ```{r Study1b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-
 
 survey=levels(factor(trolley_proc$survey_name))
 tabledata_s1b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
@@ -334,71 +340,149 @@ kbl(
 
 <!-- //graph with exclusion -->
 ```{r Study1b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 1 with all exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  study1b %>% 
+  select(survey_name, speedboat_1_rate, speedboat_2_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(condition = case_when(condition == "speedboat_1_rate" ~ "Personal Force",
+                               condition == "speedboat_2_rate" ~ "No personal force"),
+         condition = factor(condition, levels = c("Personal Force", "No personal force")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(study1b, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$condition=plyr::mapvalues(full2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
+sumld <- 
+  plot_data %>% 
+  group_by(survey_name, condition) %>% 
+  summarise(mean = mean(rate, na.rm = T),
+            median = median(rate, na.rm = T),
+            sd = sd(rate, na.rm = T),
+            lower = mean - sd,
+            upper = mean + sd)
 
-source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
-lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
-ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
-
-sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
-
-ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = 0, y = 0), alpha = .8)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = condition,
+    y = rate,
+    fill = condition) +
+  geom_flat_violin(
+    position = position_nudge(x = 0, y = 0),
+    alpha = .8)+
   #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
-  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  stat_summary(
+    fun = mean,
+    geom = "line",
+    aes(group = 1),
+    position = position_nudge(x = 0.1),
+    size = 1) +
+  geom_line(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
+  geom_point(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
-  facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  scale_fill_viridis_d() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) + 
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
 
 
 <!-- //graph without exclusion -->
 ```{r Study1b w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  trolley_proc %>% 
+  select(survey_name, speedboat_1_rate, speedboat_2_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(condition = case_when(condition == "speedboat_1_rate" ~ "Personal Force",
+                               condition == "speedboat_2_rate" ~ "No personal force"),
+         condition = factor(condition, levels = c("Personal Force", "No personal force")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(trolley_proc, select=c("speedboat_1_rate", "speedboat_2_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$condition=plyr::mapvalues(full2$condition, from=c("speedboat_1_rate", "speedboat_2_rate"), to=c("Personal Force", "No personal force"))
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
+sumld <- 
+  plot_data %>% 
+  group_by(survey_name, condition) %>% 
+  summarise(mean = mean(rate, na.rm = T),
+            median = median(rate, na.rm = T),
+            sd = sd(rate, na.rm = T),
+            lower = mean - sd,
+            upper = mean + sd)
 
-source("https://gist.githubusercontent.com/benmarwick/2a1bb0133ff568cbe28d/raw/fb53bd97121f7f9ce947837ef1a4c65a73bffb3f/geom_flat_violin.R")
-lb <- function(x) mean(x, na.rm=T) - sd(x, na.rm=T)
-ub <- function(x) mean(x, na.rm=T) + sd(x, na.rm=T)
-
-sumld<- plyr::ddply(full2, ~condition+survey_name, summarise, mean = mean(rate, na.rm=T), median = median(rate, na.rm=T), lower = lb(rate), upper = ub(rate))
-
-ggplot(full2, aes(x=condition, y=rate, fill=condition)) +
-  geom_flat_violin(position = position_nudge(x = .2, y = 0), alpha = .8)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = condition,
+    y = rate,
+    fill = condition) +
+  geom_flat_violin(
+    position = position_nudge(x = 0, y = 0),
+    alpha = .8)+
   #geom_point(aes(y = rate, color = condition), position = position_jitter(width = .15), size = .5, alpha = 0.8) +
-  stat_summary(fun=mean,geom="line", aes(group=1),position = position_nudge(x = 0.1), size = 1)+
-  geom_line(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5)+
-  geom_point(data = sumld, aes(x = condition, y = mean), position = position_nudge(x = 0.1), size = 2.5) +
-  #geom_errorbar(data = sumld, aes(ymin = lower, ymax = upper, y = mean), position = position_nudge(x = 0.3), width = 0) +
+  stat_summary(
+    fun = mean,
+    geom = "line",
+    aes(group = 1),
+    position = position_nudge(x = 0.1),
+    size = 1) +
+  geom_line(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
+  geom_point(
+    data = sumld,
+    aes(x = condition, y = mean),
+    position = position_nudge(x = 0.1),
+    size = 2.5) +
   guides(fill = FALSE) +
   guides(color = FALSE) +
-  facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  scale_fill_viridis_d() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) + 
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
 
 
@@ -465,58 +549,125 @@ kbl(
 
 <!-- //graph with exclusion -->
 ```{r Study2a excl graph,fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  study2a %>% 
+  select(survey_name, trolley_3_rate, trolley_4_rate, trolley_5_rate, trolley_6_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(personal_force = case_when(condition == "trolley_3_rate" ~ "No Personal Force",
+                                    condition == "trolley_4_rate" ~ "Personal force",
+                                    condition == "trolley_5_rate" ~ "No Personal Force",
+                                    condition == "trolley_6_rate" ~ "Personal force"),
+         intention = case_when(condition == "trolley_3_rate" ~ "No Intention",
+                               condition == "trolley_4_rate" ~ "Intention",
+                               condition == "trolley_5_rate" ~ "Intention",
+                               condition == "trolley_6_rate" ~ "No Intention"),
+         intention = factor(intention, levels = c("No Intention", "Intention")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(study2a, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$personal_force=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
-full2$intention=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
-
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
-
-
-
-ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
-  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
-  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = intention,
+    y = rate,
+    fill = personal_force,
+    width = 0.7) +
+  stat_summary(
+    fun = mean,
+    geom = "bar",
+    position = "dodge",
+    colour = "Black",
+    width = 1.2) +
+  stat_summary(
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  scale_fill_viridis_d() +
   facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) +
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
-
 
 <!-- //graph without exclusion -->
 ```{r Study2a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. ",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  trolley_proc %>% 
+  select(survey_name, trolley_3_rate, trolley_4_rate, trolley_5_rate, trolley_6_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(personal_force = case_when(condition == "trolley_3_rate" ~ "No Personal Force",
+                                    condition == "trolley_4_rate" ~ "Personal force",
+                                    condition == "trolley_5_rate" ~ "No Personal Force",
+                                    condition == "trolley_6_rate" ~ "Personal force"),
+         intention = case_when(condition == "trolley_3_rate" ~ "No Intention",
+                               condition == "trolley_4_rate" ~ "Intention",
+                               condition == "trolley_5_rate" ~ "Intention",
+                               condition == "trolley_6_rate" ~ "No Intention"),
+         intention = factor(intention, levels = c("No Intention", "Intention")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(trolley_proc, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$personal_force=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
-full2$intention=plyr::mapvalues(full2$condition, from=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
-
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
-
-
-
-ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
-  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
-  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = intention,
+    y = rate,
+    fill = personal_force,
+    width = 0.7) +
+  stat_summary(
+    fun = mean,
+    geom = "bar",
+    position = "dodge",
+    colour = "Black",
+    width = 1.2) +
+  stat_summary(
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  scale_fill_viridis_d() +
   facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) +
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
-
-
 
 ```{r study2b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 tabledata_s2b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -569,63 +720,129 @@ kbl(
   kable_styling( full_width = F,  position="left")%>%
   row_spec(row=0, bold=TRUE)%>%
   collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
-
-
-
 ```
-
 
 <!-- //graph with exclusion -->
 ```{r study2b excl graph, fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when all exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean.",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  study2b %>% 
+  select(survey_name, speedboat_3_rate, speedboat_4_rate, speedboat_5_rate, speedboat_6_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(personal_force = case_when(condition == "speedboat_3_rate" ~ "No Personal Force",
+                                    condition == "speedboat_4_rate" ~ "Personal force",
+                                    condition == "speedboat_5_rate" ~ "No Personal Force",
+                                    condition == "speedboat_6_rate" ~ "Personal force"),
+         intention = case_when(condition == "speedboat_3_rate" ~ "No Intention",
+                               condition == "speedboat_4_rate" ~ "Intention",
+                               condition == "speedboat_5_rate" ~ "Intention",
+                               condition == "speedboat_6_rate" ~ "No Intention"),
+         intention = factor(intention, levels = c("No Intention", "Intention")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(study2b, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$personal_force=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
-full2$intention=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
-
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
-
-
-
-ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
-  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
-  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = intention,
+    y = rate,
+    fill = personal_force,
+    width = 0.7) +
+  stat_summary(
+    fun = mean,
+    geom = "bar",
+    position = "dodge",
+    colour = "Black",
+    width = 1.2) +
+  stat_summary(
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  scale_fill_viridis_d() +
   facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) +
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
 
 
 <!-- //graph without exclusion -->
 ```{r study2b w/o excl graph,fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
+# Prepare data for plotting
+plot_data <- 
+  trolley_proc %>% 
+  select(survey_name, speedboat_3_rate, speedboat_4_rate, speedboat_5_rate, speedboat_6_rate) %>% 
+  mutate(survey_name = factor(survey_name)) %>% 
+  pivot_longer(
+    -survey_name,
+    names_to = "condition",
+    values_to = "rate") %>% 
+  mutate(personal_force = case_when(condition == "speedboat_3_rate" ~ "No Personal Force",
+                                    condition == "speedboat_4_rate" ~ "Personal force",
+                                    condition == "speedboat_5_rate" ~ "No Personal Force",
+                                    condition == "speedboat_6_rate" ~ "Personal force"),
+         intention = case_when(condition == "speedboat_3_rate" ~ "No Intention",
+                               condition == "speedboat_4_rate" ~ "Intention",
+                               condition == "speedboat_5_rate" ~ "Intention",
+                               condition == "speedboat_6_rate" ~ "No Intention"),
+         intention = factor(intention, levels = c("No Intention", "Intention")),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
 
-full=subset(trolley_proc, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "survey_name"))
-full$survey_name=factor(full$survey_name)
-full2=melt(data=full, variable.name = "condition", value.name="rate", id="survey_name")
-full2$personal_force=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Personal Force", "Personal force", "No Personal Force", "Personal force"))
-full2$intention=plyr::mapvalues(full2$condition, from=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"), to=c("No Intention", "Intention", "Intention", "No Intention"))
-
-full2$survey_name=plyr::mapvalues(full2$survey_name, from=c("PSA006_Eastern", "PSA006_Western", "PSA006_Southern"), to=c("Eastern", "Western", "Southern"))
-full2=na.omit(full2)
-
-
-
-ggplot(full2, aes(x=intention, y=rate, fill=personal_force, width=0.7)) +
-  stat_summary(fun=mean, geom="bar", position="dodge", colour="Black",  width=1.2)+
-  stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=0.7), colour="Black", width=0.2)+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = intention,
+    y = rate,
+    fill = personal_force,
+    width = 0.7) +
+  stat_summary(
+    fun = mean,
+    geom = "bar",
+    position = "dodge",
+    colour = "Black",
+    width = 1.2) +
+  stat_summary(
+    fun.data = mean_cl_boot,
+    geom = "errorbar",
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  scale_fill_viridis_d() +
   facet_wrap(facets=vars(survey_name)) +
-  labs( y="To what extent is this action morally acceptable?")+ theme_bw()+
-  expand_limits(y=c(1,9))+scale_y_continuous(breaks=c(1,2,3,4,5,6,7,8,9))+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
+  labs(y = "To what extent is this action morally acceptable?") +
+  theme_bw() +
+  expand_limits(y = c(1,9)) +
+  scale_y_continuous(breaks = 1:9) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
 
 The initial idea behind the exclusion critria was that by excluding certain people, we decrease noise and, as a result, we avoid false negative effects. For example, we thought that people failing the attention check questions do not paid enough attention to the task, or that people who were familiar with the trolley problem would respond with their knowledge of the trolley problem in mind, and that would result in a decreased effect of personal force. We observed the complete opposite; we observed a bigger effect size if there was no participants excluded in all cases previously analysed. This could mean either an increased random noise due to the decreased N, or a systematic bias that was intrudiced by a large number of exclusions (85% excluded overall). Hence, to avoid such biases, from this point, we applied no exclusion criteria. 
@@ -721,18 +938,37 @@ for (i in levels(factor(trolley_proc$country3))){
   countrydata[i,"N"]=length(dat_long$rate)
 }
 countrydata=na.omit(countrydata)
-ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
-  geom_point(aes(size=N))+
-  geom_text(hjust=-0.2,size=3)+
-geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+
-  xlab("Effect size")+
-  theme_bw()+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
-  
-  
 
+# Create plot
+countrydata %>% 
+  ggplot() +
+  aes(
+    x = cohend,
+    y = Collectivism,
+    label = country) +
+  geom_point(aes(size = N)) +
+  geom_smooth(
+    method = "lm", 
+    mapping = aes(weight = N), 
+    color = "blue", 
+    show.legend = FALSE, 
+    se = F) +
+  geom_text_repel(
+    min.segment.length = 0.5,
+    # hjust = -0.2, 
+    size = 3.5) +
+  xlab("Effect size") +
+  theme_bw() +
+  theme(
+    panel.grid.major=element_blank(),
+    panel.grid.minor=element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_text(face = "bold", size = 12, colour = "Black"),
+    axis.title.y = element_text(face = "bold", size = 12, colour = "Black"),
+    axis.text.x = element_text(face = "bold", size = 10, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_text(face = "bold", size = 10, colour = "Black"),
+    legend.text = element_text(size = 9))
 ```
 
 <!-- Bayesian personal level individualism  w/o exclusion -->
@@ -745,20 +981,36 @@ ind2$condition=plyr::mapvalues(ind2$condition, from=c("trolley_1_rate", "trolley
 ind2=na.omit(ind2)
 
 ###ggplot bargraph
-
-ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
- geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
-  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
-  labs( y="Beta effect size")+ theme_bw()+
-  geom_hline(yintercept=0)+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
-
- 
+graphdata %>% 
+  ggplot() +
+  aes(
+    x = variable,
+    y = b,
+    width = 0.7) +
+  geom_bar(
+    stat = "identity",
+    position = "dodge",
+    colour = "Black", 
+    width = 1.2)+
+  geom_errorbar(
+    aes(ymin = lower, ymax = higher),
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  labs(y = "Beta effect size") +
+  theme_bw() +
+  geom_hline(yintercept = 0) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
-
 
 ```{r analysis individual + country level study 1b, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
@@ -841,40 +1093,70 @@ for (i in levels(factor(trolley_proc$country3))){
   countrydata[i,"N"]=length(dat_long$rate)
 }
 countrydata=na.omit(countrydata)
-ggplot(countrydata, aes(x=cohend, y=Collectivism, label=country)) +
-  geom_point(aes(size=N))+
-  geom_text(hjust=-0.2,size=3)+
-geom_smooth(method = "lm", mapping = aes(weight = N), color = "blue", show.legend = FALSE, se=F)+
-  xlab("Effect size")+
-  theme_bw()+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_text(face="bold", size=12, colour="Black"), axis.title.y=element_text(face="bold", size=12, colour="Black"), axis.text.x = element_text(face="bold", size=10, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_text(face="bold", size=10, colour="Black"),legend.text=element_text(size=9))
-  
-  
 
+countrydata %>% 
+  ggplot() +
+  aes(
+    x = cohend,
+    y = Collectivism,
+    label = country) +
+  geom_point(aes(size = N)) +
+  geom_text_repel(
+    hjust = -0.2,
+    size = 3) +
+geom_smooth(
+  method = "lm",
+  mapping = aes(weight = N),
+  color = "blue",
+  show.legend = FALSE,
+  se = F) +
+  xlab("Effect size") +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_text(face = "bold", size = 12, colour = "Black"),
+    axis.title.y = element_text(face = "bold", size = 12, colour = "Black"),
+    axis.text.x = element_text(face = "bold", size = 10, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_text(face = "bold", size = 10, colour = "Black"),
+    legend.text = element_text(size = 9))
 ```
-
 
 <!-- Bayesian personal level individualism  w/o exclusion-->
 ```{r study1b vertical horizontal individualism,  out.width="80%", fig.cap="Personal level individualism/collectivism effects on the Speedboat dilemmas", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-
 #line plot, two conditions are different lines and y = acceptance, x individualism, should do it with allcol/ind scales.
-
-
-ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
- geom_bar(stat="identity", position="dodge", colour="Black",  width=1.2)+
-  geom_errorbar(aes(ymin=lower, ymax=higher), position=position_dodge(width=0.7), colour="Black", width=0.2) +
-  labs( y="Beta effect size")+ theme_bw()+
-  geom_hline(yintercept=0)+
-  theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),plot.title=element_text( hjust=0.5, vjust=0.5, face="bold", size=17),
-        axis.title.x=element_blank(), axis.title.y=element_text(face="bold", size=10), axis.text.x = element_text(face="bold", size=7, colour="Black"), axis.text.y = element_text(face="bold", size=12, colour="Black"),
-        legend.title=element_blank(),legend.text=element_text(size=9))
-
-
-
+graphdata %>% 
+  ggplot() +
+  aes(
+    x = variable,
+    y = b,
+    width = 0.7) +
+  geom_bar(
+    stat = "identity",
+    position = "dodge",
+    colour = "Black",
+    width = 1.2) +
+  geom_errorbar(
+    aes(ymin = lower, ymax = higher),
+    position = position_dodge(width = 0.7),
+    colour = "Black",
+    width = 0.2) +
+  labs(y = "Beta effect size") +
+  theme_bw() +
+  geom_hline(yintercept = 0) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
 ```
-
 
 ##Study 2a and 2b
 
@@ -1145,10 +1427,7 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 
 In every cluster and for both types of dilemma we found good enough evidence supporting the alternative hypothesis when testing the effect of physical contact and the effect of intention. The summary of the results can be found in Table X.
 
-```{r physical contact , echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-# Load the processed data without any exclusion
-trolley_proc <- vroom(here::here("data", "trolley_preprocessed.csv"))
-
+```{r physical contact , echo = FALSE, message = FALSE, warning = FALSE, paged.print = FALSE}
 # Tidy Bf extractor function
 my_bf_extractor <- function(bf_obj) {
   BayesFactor::extractBF(bf_obj) %>% 
@@ -1182,10 +1461,10 @@ additional_res_1 %>%
             Dilemma = str_to_title(Dilemma),
             Comparison = case_when(Comparison == "physical" ~ "Physical Contact",
                                    Comparison == "intention" ~ "Intention"),
-            `t value` = t,
-            `B` = bf,
-            `Degrees of Freedom` = df,
-            `p value` = p) %>% 
+            t,
+            `Bf` = scales::scientific(bf),
+            df,
+            p) %>% 
   papaja::apa_table(
     caption = "Effect of Physical Contact and Intention",
     escape = TRUE)
@@ -1195,7 +1474,7 @@ additional_res_1 %>%
 
 When comparing the standard switch and standard footbridge dilemmas in all clusters for the trolley and the speedboat tasks we found good enough evidence in every case for the support of the alternative hypothesis. The summary results of each comparison separately can be found in Table X.
 
-```{r, standard switch and footbridge, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r, standard switch and footbridge, echo = FALSE, message = FALSE, warning = FALSE, paged.print = FALSE}
 additional_res_2 <- 
   trolley_proc %>% 
   select(survey_name, survey_id, matches("trolley_[0-9]_rate|speedboat_[0-9]_rate")) %>% 
@@ -1217,10 +1496,10 @@ additional_res_2 %>%
   separate(comparison, into = c("Dilemma", "Comparison"), sep = "_") %>% 
   transmute(Cluster = str_remove(survey_name, "^[^_]*_"),
             Dilemma = str_to_title(Dilemma),
-            `t value` = t,
-            `B` = bf,
-            `Degrees of Freedom` = df,
-            `p value` = p) %>% 
+            t,
+            `Bf` = scales::scientific(bf),
+            df,
+            p) %>% 
   papaja::apa_table(
     caption = "Comparing the Standard Switch and Standard Footbridge Dilemmas",
     escape = TRUE)
@@ -1229,3 +1508,56 @@ additional_res_2 %>%
 
 ##Oxford utilitarianism Scale
 <!-- Oxford Utilitarianism Scale <MARCI> -->
+
+```{r}
+# Prepare data for plotting
+plot_data <-
+  trolley_proc %>% 
+  select(survey_name, lab, ResponseId, contains("oxford_")) %>%
+  pivot_longer(
+    contains("oxford_"),
+    names_to = "item_no",
+    values_to = "rate",
+    names_prefix = "oxford_utilitarian_") %>%
+  mutate(item_no = as.integer(item_no),
+         subscale = case_when(item_no == 1L ~ "Impartial Beneficence",
+                              item_no == 2L ~ "Instrumental Harm",
+                              item_no == 3L ~ "Impartial Beneficence",
+                              item_no == 4L ~ "Instrumental Harm",
+                              item_no == 5L ~ "Impartial Beneficence",
+                              item_no == 6L ~ "Instrumental Harm",
+                              item_no == 7L ~ "Impartial Beneficence",
+                              item_no == 8L ~ "Instrumental Harm",
+                              item_no == 9L ~ "Impartial Beneficence",
+                              TRUE ~ NA_character_),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = subscale,
+    y = rate,
+    width = 0.7) +
+  geom_boxplot() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(
+    y = "Rating",
+    x = "Subscale") +
+  scale_y_continuous(
+    breaks = 1:7,
+    labels = as.character(1:7)) + 
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
+```
+
