@@ -1509,3 +1509,55 @@ additional_res_2 %>%
 ##Oxford utilitarianism Scale
 <!-- Oxford Utilitarianism Scale <MARCI> -->
 
+```{r}
+# Prepare data for plotting
+plot_data <-
+  trolley_proc %>% 
+  select(survey_name, lab, ResponseId, contains("oxford_")) %>%
+  pivot_longer(
+    contains("oxford_"),
+    names_to = "item_no",
+    values_to = "rate",
+    names_prefix = "oxford_utilitarian_") %>%
+  mutate(item_no = as.integer(item_no),
+         subscale = case_when(item_no == 1L ~ "Impartial Beneficence",
+                              item_no == 2L ~ "Instrumental Harm",
+                              item_no == 3L ~ "Impartial Beneficence",
+                              item_no == 4L ~ "Instrumental Harm",
+                              item_no == 5L ~ "Impartial Beneficence",
+                              item_no == 6L ~ "Instrumental Harm",
+                              item_no == 7L ~ "Impartial Beneficence",
+                              item_no == 8L ~ "Instrumental Harm",
+                              item_no == 9L ~ "Impartial Beneficence",
+                              TRUE ~ NA_character_),
+         survey_name = str_remove(survey_name, "PSA006_")) %>% 
+  drop_na(rate)
+
+# Create plot
+plot_data %>% 
+  ggplot() +
+  aes(
+    x = subscale,
+    y = rate,
+    width = 0.7) +
+  geom_boxplot() +
+  facet_wrap(facets = vars(survey_name)) +
+  labs(
+    y = "Rating",
+    x = "Subscale") +
+  scale_y_continuous(
+    breaks = 1:7,
+    labels = as.character(1:7)) + 
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(hjust = 0.5, vjust = 0.5, face = "bold", size = 17),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(face = "bold", size = 7, colour = "Black"),
+    axis.text.y = element_text(face = "bold", size = 12, colour = "Black"),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 9))
+```
+
