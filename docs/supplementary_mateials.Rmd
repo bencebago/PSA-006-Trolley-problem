@@ -31,13 +31,14 @@ library(janitor)
 library(here)
 library(ggrepel)
 
-# Import data
-trolley_raw <- vroom(here("data/trolley_raw.csv"))
-trolley_proc <- vroom(here("data/trolley_preprocessed.csv"))
-study1a <- vroom(here("data/study1a.csv"))
-study1b <- vroom(here("data/study1b.csv"))
-study2a <- vroom(here("data/study2a.csv"))
-study2b <- vroom(here("data/study2b.csv"))
+
+setwd("~/PSA-006-Trolley-problem")
+trolley_raw <- read.csv("data/trolley_raw.csv")
+trolley_proc <- read.csv("data/trolley_preprocessed.csv")
+study1a <- read.csv("data/study1a.csv")
+study1b <- read.csv("data/study1b.csv")
+study2a <- read.csv("data/study2a.csv")
+study2b <- read.csv("data/study2b.csv")
 
 #raw=levels(factor(trolley_raw$lab))
 
@@ -52,28 +53,28 @@ study2b <- vroom(here("data/study2b.csv"))
 ```{r echo = FALSE}
 # Show the labs who are in the raw dataset but not in the processed
 # Most likely these labs sent out the survey with the practice link
-missing_labs <- 
-  trolley_raw %>% 
-  distinct(lab) %>% 
-  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
+#missing_labs <- 
+#  trolley_raw %>% 
+#  distinct(lab) %>% 
+#  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
 
 # show the number of participants missing in each lab
-trolley_raw %>% 
-  inner_join(., missing_labs, by = "lab") %>% 
-  count(lab) %>% 
-  ungroup() %>% 
-  mutate(all_n = sum(n))
+#trolley_raw %>% 
+#  inner_join(., missing_labs, by = "lab") %>% 
+#  count(lab) %>% 
+#  ungroup() %>% 
+#  mutate(all_n = sum(n))
 ```
 
 ```{r}
 # Show the number of participants excluded because of not finished responses
-trolley_raw %>%
-  filter(str_detect(str_to_lower(practice), "false")) %>% 
-  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
-         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-         !(lab == "USA_095")) %>% 
-  filter(Progress < 98) %>% 
-  count()
+#trolley_raw %>%
+#  filter(str_detect(str_to_lower(practice), "false")) %>% 
+#  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+#         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+#         !(lab == "USA_095")) %>% 
+#  filter(Progress < 98) %>% 
+#  count()
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -108,6 +109,35 @@ trolley_proc$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6
 trolley_proc$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
 trolley_proc$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
 detach(trolley_proc)
+
+
+
+
+study2a$lab=as.character(study2a$lab)
+study2a$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  study2a$lab)
+study2a$country3=recode(study2a$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+study2a=merge(study2a, cd, by=c("country3"))
+
+###individualism/collectivism scale
+attach(study2a)
+study2a$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+study2a$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+study2a$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+study2a$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(study2a)
+
+study2b$lab=as.character(study2b$lab)
+study2b$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  study2b$lab)
+study2b$country3=recode(study2b$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+study2b=merge(study2b, cd, by=c("country3"))
+
+###individualism/collectivism scale
+attach(study2b)
+study2b$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+study2b$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+study2b$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+study2b$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(study2b)
 
 survey=levels(factor(trolley_proc$survey_name))
 
@@ -894,7 +924,7 @@ vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
 
-dat=subset(study_2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
+dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -957,8 +987,6 @@ kbl(
   row_spec(row=0, bold=TRUE)
 
 ```
-
-
 
 
 <!-- Bayesian country level individualism w exclusion -->
@@ -1302,6 +1330,116 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 ```
 
 #4. Additional analysis
+##Effect of familiarity
+```{r familiarity, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+#no exclusion
+#use data study1a
+tabledata_s2a_ind = data.frame(Effect=c(rep("Interaction", 3)),Dilemma=c("Trolley", "Trolley", "Trolley"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=3, dimnames=list(survey,c("BF", "b",  "p"))))
+
+for (i in survey){
+  
+dat=subset(trolley_proc, survey==i,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", "familiarity"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
+  datt=lmBF(rate ~   personal_force*intention*familiarity+ country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:familiarity" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+familiarity+personal_force:familiarity+personal_force:intention+intention:familiarity+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*familiarity +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
+datt3=as_tibble(datt/datt2)
+tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
+tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
+tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
+}
+
+tabledata_s2b_ind = data.frame(Effect=c(rep("Interaction", 3)), Dilemma=c("Speedboat", "Speedboat", "Speedboat"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=3, dimnames=list(survey,c("BF", "b",  "p"))))
+
+for (i in survey){
+  
+dat=subset(trolley_proc, survey==i,  select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "country3", "familiarity"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
+dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
+  datt=lmBF(rate ~   personal_force*intention*familiarity+ country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:familiarity" = 0.19))
+  datt2=lmBF(rate ~  personal_force+intention+familiarity+personal_force:familiarity+personal_force:intention+intention:familiarity+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*intention*familiarity +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
+datt3=as_tibble(datt/datt2)
+tabledata_s2b_ind[i, "BF"]=signif(datt3[1,1],4)
+tabledata_s2b_ind[i, "b"]=round(frequentist[8, "estimate"],3)
+tabledata_s2b_ind[i, "p"]=round(frequentist[8, "p.value"],3)
+
+}
+
+tabledata_s1b_ind = data.frame(Effect=c(rep("Personal Force", 3)),Dilemma=c("Speedboat", "Speedboat", "Speedboat"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=3, dimnames=list(survey,c("BF", "b",  "p"))))
+
+for (i in survey){
+  
+dat=subset(trolley_proc, survey==i,  select=c("speedboat_1_rate", "speedboat_2_rate",  "country3", "familiarity"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_1_rate", 0, 1))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
+  datt=lmBF(rate ~   personal_force*familiarity+ country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:familiarity" = 0.26))
+  datt2=lmBF(rate ~  personal_force+familiarity+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*familiarity +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
+datt3=as_tibble(datt/datt2)
+tabledata_s1b_ind[i, "BF"]=signif(datt3[1,1],4)
+tabledata_s1b_ind[i, "b"]=round(frequentist[4, "estimate"],3)
+tabledata_s1b_ind[i, "p"]=round(frequentist[4, "p.value"],3)
+}
+
+tabledata_s1a_ind = data.frame(Effect=c(rep("Personal Force", 3)),Dilemma=c("Trolley", "Trolley", "Trolley"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=3, dimnames=list(survey,c("BF", "b",  "p"))))
+
+for (i in survey){
+  
+dat=subset(trolley_proc, survey==i,  select=c("trolley_1_rate", "trolley_2_rate",  "country3", "familiarity"))
+dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
+dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_1_rate", 0, 1))
+dat_long$country3=as.character(dat_long$country3)
+dat_long$country3=factor(paste0("0", dat_long$country3))
+
+  datt=lmBF(rate ~   personal_force*familiarity+ country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:familiarity" = 0.26))
+  datt2=lmBF(rate ~  personal_force+familiarity+country3, whichRandom="country3",data=dat_long)  
+  frequentist_m=lmer(rate ~ personal_force*familiarity +(1|country3), data=dat_long)
+  frequentist=broom.mixed::tidy(frequentist_m)
+datt3=as_tibble(datt/datt2)
+tabledata_s1a_ind[i, "BF"]=signif(datt3[1,1],4)
+tabledata_s1a_ind[i, "b"]=round(frequentist[4, "estimate"],3)
+tabledata_s1a_ind[i, "p"]=round(frequentist[4, "p.value"],3)
+
+}
+full_familiarity=rbind(tabledata_s1a_ind, tabledata_s1b_ind, tabledata_s2a_ind, tabledata_s2b_ind)
+
+rownames(full_familiarity) <- NULL
+
+
+kbl(
+  full_familiarity,
+  format = "latex",
+  booktabs = T,
+  escape=T,
+  caption = "Did familiarity affect the results?",
+  centering=T,
+  position="H"
+  )%>%
+  kable_styling( full_width = F,  position="left")%>%
+  row_spec(row=0, bold=TRUE)%>%
+    collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")%>%
+    collapse_rows(columns = 2, valign = "top", latex_hline = "major", row_group_label_position = "identity")
+
+
+```
+
+
 ##Effect of physical contact and intention
 
 In every cluster and for both types of dilemma we found good enough evidence supporting the alternative hypothesis when testing the effect of physical contact and the effect of intention. The summary of the results can be found in Table X.
