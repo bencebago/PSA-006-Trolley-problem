@@ -49,6 +49,33 @@ study2b <- read_csv("data/study2b.csv")
 
 ```
 
+```{r echo = FALSE}
+# Show the labs who are in the raw dataset but not in the processed
+# Most likely these labs sent out the survey with the practice link
+missing_labs <- 
+  trolley_raw %>% 
+  distinct(lab) %>% 
+  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
+
+# show the number of participants missing in each lab
+trolley_raw %>% 
+  inner_join(., missing_labs, by = "lab") %>% 
+  count(lab) %>% 
+  ungroup() %>% 
+  mutate(all_n = sum(n))
+```
+
+```{r}
+# Show the number of participants excluded because of not finished responses
+trolley_raw %>%
+  filter(str_detect(str_to_lower(practice), "false")) %>% 
+  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+         !(lab == "USA_095")) %>% 
+  filter(Progress < 98) %>% 
+  count()
+```
+
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
 cd_raw <- read_csv(here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
@@ -1456,17 +1483,29 @@ table_data <-
   trolley_raw %>% 
   select(survey_name, lab) %>%
   drop_na(lab) %>% 
-  transmute(country3 = str_extract(lab, "[A-Z]+") %>% 
+  mutate(country3 = str_extract(lab, "[A-Z]+") %>% 
               recode(., !!!custom_countries),
          region = str_remove(survey_name, "PSA006_"),
          Country = countrycode(sourcevar = country3, 
                                       origin = "iso3c",
-                                      destination = "country.name")) %>% 
-  distinct(region, Country)
+                                      destination = "country.name"))
+# GBR_001!
+# Check the number of countries per region
+table_data %>% 
+  distinct(region, Country) %>% 
+  count(region)
+# Missing coutnries since the Stage 1 manuscript:
+# Western: South Africa
+# Southern: El Salvador
+# Eastern: Indonesia
 
 table_data <- 
   table_data %>% 
-  pivot_wider(names_from = region, values_from = Country)
+  distinct(region, Country) %>% 
+  group_by(region) %>% 
+  arrange(Country) %>% 
+  summarise(countries = str_c(Country, collapse = ", ")) %>% 
+  pivot_wider(names_from = region, values_from = countries)
 
 # Create APA formatted table
 papaja::apa_table(
@@ -1474,5 +1513,9 @@ papaja::apa_table(
   caption = "The Cultural Classification of Countries of Participating Labs Following Awad et al.",
   escape = TRUE
 )
+```
+
+```{r, echo = FALSE}
+# Check the 
 ```
 
