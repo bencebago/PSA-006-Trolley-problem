@@ -42,31 +42,31 @@ study2b <- filter(trolley, include_study2b)
 
 ```
 
-```{r echo = FALSE}
+```{r, echo = FALSE}
+# Calculate background information
+
 # Show the labs who are in the raw dataset but not in the processed
 # Most likely these labs sent out the survey with the practice link
-#missing_labs <- 
-#  trolley_raw %>% 
-#  distinct(lab) %>% 
-#  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
+missing_labs <-
+ trolley_raw %>%
+ distinct(lab) %>%
+ anti_join(., distinct(trolley_proc, lab), by = "lab")
 
 # show the number of participants missing in each lab
-#trolley_raw %>% 
-#  inner_join(., missing_labs, by = "lab") %>% 
-#  count(lab) %>% 
-#  ungroup() %>% 
-#  mutate(all_n = sum(n))
-```
+trolley_raw %>%
+ inner_join(., missing_labs, by = "lab") %>%
+ count(lab) %>%
+ ungroup() %>%
+ mutate(all_n = sum(n))
 
-```{r}
 # Show the number of participants excluded because of not finished responses
-#trolley_raw %>%
-#  filter(str_detect(str_to_lower(practice), "false")) %>% 
-#  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
-#         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-#         !(lab == "USA_095")) %>% 
-#  filter(Progress < 98) %>% 
-#  count()
+trolley_raw %>%
+ filter(str_detect(str_to_lower(practice), "false")) %>%
+ filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+        !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+        !(lab == "USA_095")) %>%
+ filter(Progress < 98) %>%
+ count()
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -137,7 +137,88 @@ survey=levels(factor(trolley_proc$survey_name))
 
 #1. Demographics and exclusion 
 
-<!-- <Tamas> -->
+```{r}
+# Function to summarize studies into variables
+summarise_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    summarise(N = n(),
+            `Age Mean` = mean(Age, na.rm = TRUE),
+            `Age SD` = sd(Age, na.rm = TRUE),
+            `Male %` = mean(Gender == 1, na.rm = TRUE),
+            `Higher education %` = mean(`Higher education`, na.rm = TRUE),
+            .groups = "drop")
+  
+}
+
+# Function to create the publication ready table
+create_table <- function(data = NULL){
+  data %>% 
+  relocate(Country, .before = country3) %>% 
+  select(-country3, -distance_year) %>% 
+  gt(groupname_col = "grouping", 
+     rowname_col = "Region") %>%
+  fmt_number(columns = vars(`Age Mean`, `Age SD`),
+             decimals = 1) %>% 
+  tab_spanner(columns = vars(grouping), label = "Region") %>%
+  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
+             pattern = "{1} ({2})") %>% 
+  fmt_number(columns = vars(Collectivism),
+             decimals = 3) %>% 
+  fmt_percent(columns = vars(`Male %`, `Higher education %`),
+              decimals = 1) %>% 
+  fmt_missing(vars(Country, Collectivism, Region, grouping, `Higher education %`, `Male %`, `Age SD`)) %>% 
+  cols_label(`Age Mean` = "Age (SD)") %>% 
+  tab_footnote(
+    footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
+    locations = cells_column_labels(columns = vars(Collectivism))
+  ) %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999", 
+              )
+  
+}
+
+summaries <-
+  trolley %>% 
+  nest(data = everything()) %>% 
+  mutate(country_sum = map(data, 
+                             ~group_by(.x, Region, country3) %>% 
+                             summarise_study() %>% 
+                             left_join(cd, by = "country3") %>% 
+                             add_column(grouping = "By country", .before = 1) %>% 
+                             mutate(Country = countrycode(sourcevar = country3, 
+                                                          origin = "iso3c",
+                                                          destination = "country.name")) %>% 
+                             arrange(Region, Country)),
+         region_sum = map(data, ~group_by(.x, Region) %>% 
+                            summarise_study() %>% 
+                            add_column(grouping = "By region", .before = 1) %>% 
+                            arrange(Region)),
+         all_sum =map(data, ~summarise_study(.x) %>% 
+                        add_column(grouping = "All", .before = 1) %>% 
+                        mutate(Region = "All")),
+         # Add the 3 level summaries into one dateset
+         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
+         # Generate the tables
+         gtable = map(bind_sum, create_table))
+
+summaries$gtable
+
+# Verify
+summaries$gtable[[1]] 
+
+# Save
+# gtsave(summaries$gtable[[1]], "docs/demo_table.html")
+
+
+```
+
 
 
 #2. Main replication analysis
