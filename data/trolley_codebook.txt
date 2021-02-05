@@ -1,0 +1,140 @@
+variable	description
+survey_name:	
+survey_id:	
+StartDate:	
+EndDate:	
+ResponseId:	
+trolley_1_resp:	
+trolley_1_rate:	
+trolley_1_just:	
+speedboat_1_resp:	
+speedboat_1_rate:	
+trolley_2_resp:	
+trolley_2_rate:	
+trolley_2_just:	
+speedboat_2_resp:	
+speedboat_2_rate:	
+trolley_3_resp:	
+trolley_3_rate:	
+trolley_3_just:	
+speedboat_3_resp:	
+speedboat_3_rate:	
+trolley_4_resp:	
+trolley_4_rate:	
+trolley_4_just:	
+speedboat_4_resp:	
+speedboat_4_rate:	
+trolley_5_resp:	
+trolley_5_rate:	
+trolley_5_just:	
+speedboat_5_resp:	
+speedboat_5_rate:	
+trolley_6_resp:	
+trolley_6_rate:	
+trolley_6_just:	
+speedboat_6_resp:	
+speedboat_6_rate:	
+trolley_attention:	
+speedboat_attention:	
+confusion:	
+disbelief:	
+familiarity:	
+careless_1:	
+careless_2:	
+careless_3:	
+household_income:	
+currency_1:	
+living_area:	
+oxford_utilitarian_1:	
+oxford_utilitarian_2:	
+oxford_utilitarian_3:	
+oxford_utilitarian_4:	
+oxford_utilitarian_5:	
+oxford_utilitarian_6:	
+oxford_utilitarian_7:	
+oxford_utilitarian_8:	
+oxford_utilitarian_9:	
+individualism_scale_1:	
+individualism_scale_2:	
+individualism_scale_3:	
+individualism_scale_4:	
+individualism_scale_5:	
+individualism_scale_6:	
+individualism_scale_7:	
+individualism_scale_8:	
+individualism_scale_9:	
+individualism_scale_10:	
+individualism_scale_11:	
+individualism_scale_12:	
+individualism_scale_13:	
+individualism_scale_14:	
+individualism_scale_15:	
+individualism_scale_16:	
+religious_rate:	
+religion_1:	
+religion_2:	
+religion_3:	
+religion_4:	
+religion_5:	
+religion_6:	
+religion_7:	
+religion_8:	
+religion_9:	
+religion_10:	
+religion_11:	
+religion_12:	
+religion_13:	
+religion_14:	
+religion_15:	
+religion_16:	
+religion_16_TEXT:	
+education_leve:	
+education_level_iran:	
+education_level_germ:	
+age_1:	
+sex:	
+countr_origin_1:	
+immigrant_back:	
+technical_problems:	
+technical_problems_2_TEXT:	
+further_comments:	
+native_language:	
+fluency:	
+Q_Lang:	
+lab:	
+attention:	
+FL_24_DO_Footbridgepole:	
+FL_24_DO_Footbridgeswitch:	
+FL_22_DO_Standardswitch:	
+FL_22_DO_Standardfootbridge:	
+FL_22_DO_Loop:	
+FL_22_DO_Obstaclecollide:	
+trolley_attention_DO_1:	
+trolley_attention_DO_2:	
+trolley_attention_DO_3:	
+trolley_attention_DO_4:	
+trolley_attention_DO_5:	
+trolley_attention_DO_6:	
+speedboat_attention_DO_1:	
+speedboat_attention_DO_2:	
+speedboat_attention_DO_3:	
+speedboat_attention_DO_4:	
+speedboat_attention_DO_5:	
+scenario1:	Which study 1 scenario did the participant recieve.
+scenario2:	Which study 2 scenario did the participant recieve.
+include_nocareless:	Not excluded for careless reponding. Logical
+include_noconfusion:	Not excluded for confusion. Logical
+include_nofamiliarity:	Not excluded for familiarity of the research question. Logical
+include_notechproblem:	Not excluded for technical problem reponding. Logical
+include_nonativelang:	Not excluded for non-native language. Logical
+include_noproblem:	Not excluded for any of the above reasong. Locical
+include_study1a:	Not excluded for any reason AND passed the attention check for study1a. Logical
+include_study1b:	Not excluded for any reason AND passed the attention check for study1b. Logical
+include_study2a:	Not excluded for any reason AND passed the attention check for study2a. Logical
+include_study2b:	Not excluded for any reason AND passed the attention check for study2b. Logical
+include_allstudy:	Not excluded for any reason AND passed the attention check for any of the studies. Logical
+country3:	ISO3 country code
+Region:	    Region (Eastern/Southern/Western)
+Age:	in years
+Gender:	Male/Female/Other
+Higher education:	Has at least a Bachelor's degree. Logical
