@@ -32,15 +32,13 @@ library(here)
 library(ggrepel)
 
 
-trolley_raw <- vroom(here("data/trolley_raw.csv"))
-trolley_proc <- vroom(here("data/trolley_preprocessed.csv"))
-study1a <- vroom(here("data/study1a.csv"))
-study1b <- vroom(here("data/study1b.csv"))
-study2a <- vroom(here("data/study2a.csv"))
-study2b <- vroom(here("data/study2b.csv"))
+trolley_raw <- read_csv("data/trolley_raw.csv")
+trolley_proc <- read_csv("data/trolley_preprocessed.csv")
+study1a <- read_csv("data/study1a.csv")
+study1b <- read_csv("data/study1b.csv")
+study2a <- read_csv("data/study2a.csv")
+study2b <- read_csv("data/study2b.csv")
 
-trolley_proc$survey_name=factor(trolley_proc$survey_name)
-study1a$survey_name=factor(study1a$survey_name)
 #raw=levels(factor(trolley_raw$lab))
 
 #processed=levels(factor(trolley_proc$lab))
@@ -83,6 +81,35 @@ trolley_proc$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6
 trolley_proc$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
 trolley_proc$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
 detach(trolley_proc)
+
+
+
+
+study2a$lab=as.character(study2a$lab)
+study2a$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  study2a$lab)
+study2a$country3=recode(study2a$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+study2a=merge(study2a, cd, by=c("country3"))
+
+###individualism/collectivism scale
+attach(study2a)
+study2a$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+study2a$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+study2a$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+study2a$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(study2a)
+
+study2b$lab=as.character(study2b$lab)
+study2b$country3=sub("^([A-z]+)_([0-9]+)$", "\\1",  study2b$lab)
+study2b$country3=recode(study2b$country3,SWT="CHE", LEB = "LBN", BUL = "BGR", SPA = "ESP")
+study2b=merge(study2b, cd, by=c("country3"))
+
+###individualism/collectivism scale
+attach(study2b)
+study2b$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+study2b$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+study2b$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+study2b$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(study2b)
 
 survey=levels(factor(trolley_proc$survey_name))
 
@@ -869,7 +896,7 @@ vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
 
-dat=subset(study_2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
+dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -932,8 +959,6 @@ kbl(
   row_spec(row=0, bold=TRUE)
 
 ```
-
-
 
 
 <!-- Bayesian country level individualism w exclusion -->
