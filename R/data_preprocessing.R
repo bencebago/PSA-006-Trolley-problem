@@ -56,43 +56,36 @@ trolley <-
                                FL_22_DO_Obstaclecollide == 1 ~ "Obstaclecollide",
                                TRUE ~ NA_character_),
   # Flag careless responders
-         include_nocareless = if_else(careless_1 != 1 &
-                                      careless_2 != 1 &
-                                      careless_3 != 2,
-                                      TRUE, FALSE),
+         include_nocareless = careless_1 != 1 & careless_2 != 1 & careless_3 != 2,
    # Flag confused participants
-         include_noconfusion = if_else(confusion != 3, TRUE, FALSE),
+         include_noconfusion = confusion != 3,
    # Flag those with familiarity of the topic
-         include_nofamiliarity = if_else(familiarity <= 3, TRUE, FALSE),
+         include_nofamiliarity = familiarity <= 3,
    # Flag those with technical problems
-         include_notechproblem = if_else(technical_problems != 2, TRUE, FALSE),
+         include_notechproblem = technical_problems != 2,
    # Flag those who did not fill the questionnaire on their native language
-        include_nonativelang = if_else(native_language != 2, TRUE, FALSE),
+        include_nonativelang = native_language != 2,
    # Flag those without any exclusion criterion
-        include_noproblem = if_else(include_nocareless & 
-                                    include_noconfusion & 
-                                    include_nofamiliarity & 
-                                    include_notechproblem &
-                                    include_nonativelang, 
-                                    TRUE, FALSE)) %>%
+        include_noproblem =  include_nocareless & 
+                             include_noconfusion & 
+                             include_nofamiliarity & 
+                             include_notechproblem &
+                             include_nonativelang) %>%
    # Flag those that are eligible to analysis in each study
   left_join(select(correct_answers, -scenario2) %>% drop_na(scenario1), 
             by = c("scenario1")) %>%
-  mutate(include_study1a = if_else((trolley_attention == trolley_answer) & 
-                                   include_noproblem, 
-                                   TRUE, FALSE),
-         include_study1b = if_else((speedboat_attention == speedboat_answer) & 
-                                   include_noproblem, 
-                                   TRUE, FALSE)) %>% 
+  mutate(include_study1a = (trolley_attention == trolley_answer) & include_noproblem, 
+         include_study1b = (speedboat_attention == speedboat_answer) & include_noproblem) %>% 
   select(-trolley_answer, -speedboat_answer) %>% 
   left_join(select(correct_answers, -scenario1) %>% drop_na(scenario2), 
             by = c("scenario2")) %>%   
-  mutate(include_study2a = if_else((trolley_attention == trolley_answer) & 
-                                   include_noproblem, 
-                                   TRUE, FALSE),
-         include_study2b = if_else((speedboat_attention == speedboat_answer) & 
-                                   include_noproblem, 
-                                   TRUE, FALSE)) %>% 
+  mutate(include_study2a = (trolley_attention == trolley_answer) & include_noproblem,
+         include_study2b = (speedboat_attention == speedboat_answer) & include_noproblem,
+         # Flag rows that can be included to any of the studies
+         include_allstudy = include_study1a | 
+                            include_study1b | 
+                            include_study2a | 
+                            include_study2b) %>% 
   select(-trolley_answer, -speedboat_answer) %>% 
   # Add processed variables
   mutate(country3 = str_extract(lab, "[A-Z]+") %>% 
@@ -117,5 +110,17 @@ trolley <-
   select(-edu_high, -edu_high_ger)
 
 write_csv(trolley, "data/trolley.csv")
+
+
+# Create code book skeleton --------------------------------------------------------
+
+trolley_code <- 
+  tibble(variable = names(trolley),
+         description = NA_character_)
+
+write_tsv(trolley_code, "data/trolley_codebook.txt", na = "")
+
+
+
 
 
