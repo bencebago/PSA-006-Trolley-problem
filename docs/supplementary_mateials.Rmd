@@ -32,12 +32,13 @@ library(here)
 library(ggrepel)
 
 
-trolley_raw <- read_csv("data/trolley_raw.csv")
-trolley_proc <- read_csv("data/trolley_preprocessed.csv")
-study1a <- read_csv("data/study1a.csv")
-study1b <- read_csv("data/study1b.csv")
-study2a <- read_csv("data/study2a.csv")
-study2b <- read_csv("data/study2b.csv")
+setwd("~/PSA-006-Trolley-problem")
+trolley_raw <- read.csv("data/trolley_raw.csv")
+trolley_proc <- read.csv("data/trolley_preprocessed.csv")
+study1a <- read.csv("data/study1a.csv")
+study1b <- read.csv("data/study1b.csv")
+study2a <- read.csv("data/study2a.csv")
+study2b <- read.csv("data/study2b.csv")
 
 #raw=levels(factor(trolley_raw$lab))
 
@@ -52,28 +53,28 @@ study2b <- read_csv("data/study2b.csv")
 ```{r echo = FALSE}
 # Show the labs who are in the raw dataset but not in the processed
 # Most likely these labs sent out the survey with the practice link
-missing_labs <- 
-  trolley_raw %>% 
-  distinct(lab) %>% 
-  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
+#missing_labs <- 
+#  trolley_raw %>% 
+#  distinct(lab) %>% 
+#  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
 
 # show the number of participants missing in each lab
-trolley_raw %>% 
-  inner_join(., missing_labs, by = "lab") %>% 
-  count(lab) %>% 
-  ungroup() %>% 
-  mutate(all_n = sum(n))
+#trolley_raw %>% 
+#  inner_join(., missing_labs, by = "lab") %>% 
+#  count(lab) %>% 
+#  ungroup() %>% 
+#  mutate(all_n = sum(n))
 ```
 
 ```{r}
 # Show the number of participants excluded because of not finished responses
-trolley_raw %>%
-  filter(str_detect(str_to_lower(practice), "false")) %>% 
-  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
-         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-         !(lab == "USA_095")) %>% 
-  filter(Progress < 98) %>% 
-  count()
+#trolley_raw %>%
+#  filter(str_detect(str_to_lower(practice), "false")) %>% 
+#  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+#         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+#         !(lab == "USA_095")) %>% 
+#  filter(Progress < 98) %>% 
+#  count()
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
