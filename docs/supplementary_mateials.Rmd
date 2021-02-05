@@ -32,7 +32,6 @@ library(here)
 library(ggrepel)
 
 trolley_raw <- read.csv(here("data/trolley_raw.csv"))
-trolley_proc <- read.csv(here("data/trolley_preprocessed.csv"))
 trolley <- read.csv(here("data/trolley.csv"))
 
 study1a <- filter(trolley, include_study1a)
@@ -40,7 +39,10 @@ study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
 
-trolley_proc_familiarity <- filter(trolley, include_allstudy_withoutfamiliarity)
+trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
+
+trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
+
 ```
 
 ```{r, echo = FALSE}
@@ -221,7 +223,6 @@ summaries$gtable[[1]]
 ```
 
 
-
 #2. Main replication analysis
 
 ##Study 1a
@@ -244,7 +245,7 @@ tabledata_s1a[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1a[i, "p"]=round(frequentist$p.value,4)
 }
 
-tabledata_s1a_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+tabledata_s1a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 for (i in survey){
 dat=subset(trolley_proc, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -446,7 +447,7 @@ tabledata_s1b[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1b[i, "p"]=round(frequentist$p.value,3)
 }
 
-tabledata_s1b_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+tabledata_s1b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 for (i in survey){
 dat=subset(trolley_proc, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -650,7 +651,7 @@ tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 }
 
-tabledata_s2a_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
+tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 for (i in survey){
 dat=subset(trolley_proc, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -827,7 +828,7 @@ tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 }
 
-tabledata_s2b_ne = data.frame(Exclusion=c(rep("No exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
+tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 for (i in survey){
 dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -997,7 +998,6 @@ The initial idea behind the exclusion critria was that by excluding certain peop
 
 vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
-
 
 dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
@@ -1247,15 +1247,16 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 ```
 
 #4. Additional analysis
-##Effect of familiarity
+##Familiar participants
 ```{r familiarity, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 #no exclusion
 #use data study1a
+
 tabledata_s2a_ind = data.frame(Effect=c(rep("Interaction", 3)),Dilemma=c("Trolley", "Trolley", "Trolley"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=3, dimnames=list(survey,c("BF", "b",  "p"))))
 
 for (i in survey){
   
-dat=subset(trolley_proc, survey==i & familiarity==4|familiarity,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", "familiarity"))
+dat=subset(trolley_familiar, survey==i,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", "familiarity"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
