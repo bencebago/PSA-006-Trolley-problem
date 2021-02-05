@@ -31,9 +31,9 @@ library(janitor)
 library(here)
 library(ggrepel)
 
-trolley_raw <- read_csv(here("data/trolley_raw.csv"), guess_max = 10000)
-trolley_proc <- read_csv(here("data/trolley_preprocessed.csv"), guess_max = 10000)
-trolley <- read_csv(here("data/trolley.csv"), guess_max = 10000)
+trolley_raw <- read.csv(here("data/trolley_raw.csv"))
+trolley_proc <- read.csv(here("data/trolley_preprocessed.csv"))
+trolley <- read.csv(here("data/trolley.csv"))
 
 study1a <- filter(trolley, include_study1a)
 study1b <- filter(trolley, include_study1b)
@@ -817,8 +817,8 @@ dat=subset(study2b, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_ra
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.19)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
@@ -833,8 +833,8 @@ dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.26)
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long, rscaleFixed=0.26)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.19)
+datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2b_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
@@ -989,162 +989,6 @@ The initial idea behind the exclusion critria was that by excluding certain peop
 
 #3. Individualism-collectivism analysis
 ##With all exclusions
-<!-- Bayesian country level individualism w exclusion -->
-```{r analysis individual + country level study 2a exclusion, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-#for loop changes predictor variables
-#table has 5lines: country level individualism, then individual level measures
-
-vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
-tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
-
-
-dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-dat_long$country3=as.character(dat_long$country3)
-dat_long$country3=factor(paste0("0", dat_long$country3))
-
-graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
-
-for (i in vars){
-  if(i=="Collectivism"){
-  datt=lmBF(rate ~   personal_force*intention*Collectivism + country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:Collectivism" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism+country3, whichRandom="country3",data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  } else if(i=="ver_ind"){
-  datt=lmBF(rate ~   personal_force*intention*ver_ind+country3, data=dat_long,  whichRandom="country3",  rscaleCont = c("personal_force:intention:ver_ind" = 0.19))
-  datt2=lmBF(rate ~ personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind +country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_ind"){
-  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="ver_col"){
-  datt=lmBF(rate ~   personal_force*intention*ver_col+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:ver_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col +country3,  whichRandom="country3",  data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_col"){
-  datt=lmBF(rate ~  personal_force*intention*hor_col+country3, data=dat_long, whichRandom="country3", rscaleCont = c("personal_force:intention:hor_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col +country3,  whichRandom="country3",   data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }
-datt3=as_tibble(datt/datt2)
-tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
-tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
-tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
-graphdata[i, "b"]=round(frequentist[8, "estimate"],3)
-graphdata[i, "lower"]=round(confint(frequentist_m),2)[10,1]
-graphdata[i, "higher"]=round(confint(frequentist_m),2)[10,2]
-
-}
-
-graphdata=graphdata[-1,]
-rownames(tabledata_s2a_ind) <- NULL
-
-
-kbl(
-  tabledata_s2a_ind,
-  format = "latex",
-  booktabs = T,
-  escape=T,
-  caption = "Is the interaction of personal force and intention affected by individualism/collectivism on Trolley dilemmas whhen all exclusion criteria is applied?",
-  centering=T,
-  position="H"
-  )%>%
-  kable_styling( full_width = F,  position="left")%>%
-  row_spec(row=0, bold=TRUE)
-
-```
-
-
-<!-- Bayesian country level individualism w exclusion -->
-```{r analysis individual + country level study 2b exclusion, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-#for loop changes predictor variables
-#table has 5lines: country level individualism, then individual level measures
-
-vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
-tabledata_s2b_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
-
-graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
-
-
-dat=subset(study2b,  select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "country3", vars))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-dat_long$country3=as.character(dat_long$country3)
-dat_long$country3=factor(paste0("0", dat_long$country3))
-
-
-for (i in vars){
-  if(i=="Collectivism"){
-  datt=lmBF(rate ~   personal_force*intention*Collectivism + country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:Collectivism" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism+country3, whichRandom="country3",data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  } else if(i=="ver_ind"){
-  datt=lmBF(rate ~   personal_force*intention*ver_ind+country3, data=dat_long,  whichRandom="country3",  rscaleCont = c("personal_force:intention:ver_ind" = 0.19))
-  datt2=lmBF(rate ~ personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind +country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_ind"){
-  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="ver_col"){
-  datt=lmBF(rate ~   personal_force*intention*ver_col+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:ver_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col +country3,  whichRandom="country3",  data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_col"){
-  datt=lmBF(rate ~  personal_force*intention*hor_col+country3, data=dat_long, whichRandom="country3", rscaleCont = c("personal_force:intention:hor_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col +country3,  whichRandom="country3",   data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }
-datt3=as_tibble(datt/datt2)
-tabledata_s2b_ind[i, "BF"]=signif(datt3[1,1],4)
-tabledata_s2b_ind[i, "b"]=round(frequentist[8, "estimate"],3)
-tabledata_s2b_ind[i, "p"]=round(frequentist[8, "p.value"],3)
-graphdata[i, "b"]=round(frequentist[8, "estimate"],3)
-graphdata[i, "lower"]=round(confint(frequentist_m),2)[10,1]
-graphdata[i, "higher"]=round(confint(frequentist_m),2)[10,2]
-
-}
-
-graphdata=graphdata[-1,]
-
-rownames(tabledata_s2b_ind) <- NULL
-
-kbl(
-  tabledata_s2b_ind,
-  format = "latex",
-  booktabs = T,
-  escape=T,
-  caption = "Is the interaction of personal force and intention affected by individualism/collectivism on Speedboat dilemmas when all exclusion criteria is applied?",
-  centering=T,
-  position="H"
-  )%>%
-  kable_styling( full_width = F,  position="left")%>%
-  row_spec(row=0, bold=TRUE)
-
-
-
-```
-
-
-
-
-##Without any exclusions
-We applied similar analysis strategy as before: we compared the full model (including the three way interaction) with a model that includes all main effects and interactions but the three-way interaction. Here, the results are somewhat fuzzier. IN the trolley dilemma, the frequentist test shows a significant effect of both country level and horizontal collectivism, but the Bayes Faktor shows the contrary; that the null effect is more likely to be true than the alternative. This comes from the differences between the two tests; the frequentists compares to the intercept, while the Bayesian to an alternative model. Even if the effect exists it cannot be generalized to the speedboat dilemmas.
-
 
 <!-- Bayesian country level individualism w/o exclusion -->
 ```{r analysis individual + country level study 2a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -1155,7 +999,7 @@ vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
 
-dat=subset(trolley_proc,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
+dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -1227,7 +1071,7 @@ kbl(
 countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
 
 for (i in levels(factor(trolley_proc$country3))){
-  d=subset(trolley_proc, country3==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+  d=subset(study2b, country3==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
   dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
   dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
   dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -1270,7 +1114,6 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 
 
 ```
-
 
 
 <!-- Bayesian country level individualism w/o exclusion -->
@@ -1412,7 +1255,7 @@ tabledata_s2a_ind = data.frame(Effect=c(rep("Interaction", 3)),Dilemma=c("Trolle
 
 for (i in survey){
   
-dat=subset(trolley_proc, survey==i,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", "familiarity"))
+dat=subset(trolley_proc, survey==i & familiarity==4|familiarity,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", "familiarity"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c("familiarity", "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
