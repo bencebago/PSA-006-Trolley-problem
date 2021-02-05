@@ -39,6 +39,8 @@ study1a <- filter(trolley, include_study1a)
 study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
+
+trolley_proc_familiarity <- filter(trolley, include_allstudy_withoutfamiliarity)
 ```
 
 ```{r, echo = FALSE}

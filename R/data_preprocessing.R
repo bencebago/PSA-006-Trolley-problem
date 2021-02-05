@@ -70,22 +70,36 @@ trolley <-
                              include_noconfusion & 
                              include_nofamiliarity & 
                              include_notechproblem &
-                             include_nonativelang) %>%
+                             include_nonativelang,
+  # Flag those who pass all exclusion criterion expect but familiarity does not matter
+        include_withoutfamiliarity = include_nocareless & 
+                                     include_noconfusion & 
+                                     include_notechproblem &
+                                     include_nonativelang) %>%
    # Flag those that are eligible to analysis in each study
   left_join(select(correct_answers, -scenario2) %>% drop_na(scenario1), 
             by = c("scenario1")) %>%
   mutate(include_study1a = (trolley_attention == trolley_answer) & include_noproblem, 
-         include_study1b = (speedboat_attention == speedboat_answer) & include_noproblem) %>% 
+         include_study1b = (speedboat_attention == speedboat_answer) & include_noproblem,
+         include_study1a_withoutfamiliarity = (trolley_attention == trolley_answer) & include_withoutfamiliarity,
+         include_study1b_withoutfamiliarity = (speedboat_attention == speedboat_answer) & include_withoutfamiliarity) %>% 
   select(-trolley_answer, -speedboat_answer) %>% 
   left_join(select(correct_answers, -scenario1) %>% drop_na(scenario2), 
             by = c("scenario2")) %>%   
   mutate(include_study2a = (trolley_attention == trolley_answer) & include_noproblem,
          include_study2b = (speedboat_attention == speedboat_answer) & include_noproblem,
+         include_study2a_withoutfamiliarity = (trolley_attention == trolley_answer) & include_withoutfamiliarity,
+         include_study2b_withoutfamiliarity = (speedboat_attention == speedboat_answer) & include_withoutfamiliarity,
          # Flag rows that can be included to any of the studies
          include_allstudy = include_study1a | 
                             include_study1b | 
                             include_study2a | 
-                            include_study2b) %>% 
+                            include_study2b,
+         # Flag rows that have all the exclusion expect familiriaty because that is not applied
+         include_allstudy_withoutfamiliarity = include_study1a_withoutfamiliarity | 
+                                               include_study1b_withoutfamiliarity | 
+                                               include_study2a_withoutfamiliarity | 
+                                               include_study2b_withoutfamiliarity) %>% 
   select(-trolley_answer, -speedboat_answer) %>% 
   # Add processed variables
   mutate(country3 = str_extract(lab, "[A-Z]+") %>% 
