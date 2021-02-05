@@ -31,23 +31,14 @@ library(janitor)
 library(here)
 library(ggrepel)
 
+trolley_raw <- read_csv(here("data/trolley_raw.csv"))
+trolley_proc <- read_csv(here("data/trolley_preprocessed.csv"))
+trolley <- read_csv(here("data/trolley.csv"))
 
-setwd("~/PSA-006-Trolley-problem")
-trolley_raw <- read.csv("data/trolley_raw.csv")
-trolley_proc <- read.csv("data/trolley_preprocessed.csv")
-study1a <- read.csv("data/study1a.csv")
-study1b <- read.csv("data/study1b.csv")
-study2a <- read.csv("data/study2a.csv")
-study2b <- read.csv("data/study2b.csv")
-
-#raw=levels(factor(trolley_raw$lab))
-
-#processed=levels(factor(trolley_proc$lab))
-
-#k=setdiff(raw,processed)
-#f=trolley_raw[trolley_raw$lab %in% k ,]
-#table(f$lab)
-
+study1a <- filter(trolley, include_study1a)
+study1b <- filter(trolley, include_study1b)
+study2a <- filter(trolley, include_study2a)
+study2b <- filter(trolley, include_study2b)
 ```
 
 ```{r echo = FALSE}
