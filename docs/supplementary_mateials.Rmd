@@ -41,31 +41,31 @@ study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
 ```
 
-```{r echo = FALSE}
+```{r, echo = FALSE}
+# Calculate background information
+
 # Show the labs who are in the raw dataset but not in the processed
 # Most likely these labs sent out the survey with the practice link
-#missing_labs <- 
-#  trolley_raw %>% 
-#  distinct(lab) %>% 
-#  anti_join(., distinct(trolley_proc, lab), by = "lab") %>% 
+missing_labs <-
+ trolley_raw %>%
+ distinct(lab) %>%
+ anti_join(., distinct(trolley_proc, lab), by = "lab")
 
 # show the number of participants missing in each lab
-#trolley_raw %>% 
-#  inner_join(., missing_labs, by = "lab") %>% 
-#  count(lab) %>% 
-#  ungroup() %>% 
-#  mutate(all_n = sum(n))
-```
+trolley_raw %>%
+ inner_join(., missing_labs, by = "lab") %>%
+ count(lab) %>%
+ ungroup() %>%
+ mutate(all_n = sum(n))
 
-```{r}
 # Show the number of participants excluded because of not finished responses
-#trolley_raw %>%
-#  filter(str_detect(str_to_lower(practice), "false")) %>% 
-#  filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
-#         !(lab == "AUT_003" & StartDate < date("2020-06-18")),
-#         !(lab == "USA_095")) %>% 
-#  filter(Progress < 98) %>% 
-#  count()
+trolley_raw %>%
+ filter(str_detect(str_to_lower(practice), "false")) %>%
+ filter(!(lab == "TUR_021" & StartDate < date("2020-04-22")),
+        !(lab == "AUT_003" & StartDate < date("2020-06-18")),
+        !(lab == "USA_095")) %>%
+ filter(Progress < 98) %>%
+ count()
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
