@@ -33,7 +33,7 @@ library(ggrepel)
 
 trolley_raw <- read.csv(here("data/trolley_raw.csv"))
 trolley_proc <- read.csv(here("data/trolley_preprocessed.csv"))
-trolley <- read.csv(here("data/trolley.csv"))
+trolley <- read_csv(here("data/trolley.csv"), guess_max = 1e5)
 
 study1a <- filter(trolley, include_study1a)
 study1b <- filter(trolley, include_study1b)
@@ -138,6 +138,7 @@ survey=levels(factor(trolley_proc$survey_name))
 
 #1. Demographics and exclusion 
 
+## Demographics
 ```{r}
 # Function to summarize studies into variables
 summarise_study <- function(data = NULL){
@@ -151,37 +152,6 @@ summarise_study <- function(data = NULL){
             `Male %` = mean(Gender == 1, na.rm = TRUE),
             `Higher education %` = mean(`Higher education`, na.rm = TRUE),
             .groups = "drop")
-  
-}
-
-# Function to create the publication ready table
-create_table <- function(data = NULL){
-  data %>% 
-  relocate(Country, .before = country3) %>% 
-  select(-country3, -distance_year) %>% 
-  gt(groupname_col = "grouping", 
-     rowname_col = "Region") %>%
-  fmt_number(columns = vars(`Age Mean`, `Age SD`),
-             decimals = 1) %>% 
-  tab_spanner(columns = vars(grouping), label = "Region") %>%
-  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
-             pattern = "{1} ({2})") %>% 
-  fmt_number(columns = vars(Collectivism),
-             decimals = 3) %>% 
-  fmt_percent(columns = vars(`Male %`, `Higher education %`),
-              decimals = 1) %>% 
-  fmt_missing(vars(Country, Collectivism, Region, grouping, `Higher education %`, `Male %`, `Age SD`)) %>% 
-  cols_label(`Age Mean` = "Age (SD)") %>% 
-  tab_footnote(
-    footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
-    locations = cells_column_labels(columns = vars(Collectivism))
-  ) %>% 
-  tab_options(row.striping.include_table_body = TRUE,
-              row.striping.background_color = "#EEEEEE", 
-              row.striping.include_stub = TRUE,
-              row_group.background.color = "#999999", 
-              column_labels.background.color = "#999999", 
-              )
   
 }
 
@@ -205,21 +175,204 @@ summaries <-
                         add_column(grouping = "All", .before = 1) %>% 
                         mutate(Region = "All")),
          # Add the 3 level summaries into one dateset
-         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
-         # Generate the tables
-         gtable = map(bind_sum, create_table))
+         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows))
 
-summaries$gtable
+demo_table <-
+  summaries %>% 
+  select(bind_sum) %>% 
+  unnest(bind_sum) %>% 
+  relocate(Country, .before = country3) %>% 
+  select(-country3, -distance_year) %>% 
+  gt(groupname_col = "grouping", 
+     rowname_col = "Region") %>%
+  fmt_number(columns = vars(`Age Mean`, `Age SD`),
+             decimals = 1) %>% 
+  tab_spanner(columns = vars(grouping), label = "Region") %>%
+  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
+             pattern = "{1} ({2})") %>% 
+  fmt_number(columns = vars(Collectivism),
+             decimals = 3) %>% 
+  fmt_percent(columns = vars(`Male %`, `Higher education %`),
+              decimals = 1) %>% 
+  fmt_missing(vars(Country, Collectivism, 
+                   Region, grouping, `Higher education %`, 
+                   `Male %`, `Age SD`)) %>% 
+  cols_label(`Age Mean` = "Age (SD)") %>% 
+  tab_footnote(footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
+               locations = cells_column_labels(columns = vars(Collectivism))) %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999")
 
-# Verify
-summaries$gtable[[1]] 
-
-# Save
-# gtsave(summaries$gtable[[1]], "docs/demo_table.html")
-
+demo_table
 
 ```
 
+## Exclusion
+
+```{r}
+all_responses <- 
+  trolley %>% 
+  count(Region, name = "all", .drop = TRUE)
+
+exclude_careless <- 
+  trolley %>% 
+  filter(!include_nocareless) %>% 
+  group_by(Region) %>% 
+  summarise(Reason = "Careless responding", 
+            n = n(), 
+            .groups = "drop")
+
+exclude_confusion <- 
+  trolley %>% 
+  filter(!include_noconfusion) %>% 
+  group_by(Region) %>% 
+  summarise(Reason = "Confusion",
+            n = n(), 
+            .groups = "drop")
+
+exclude_familiar <- 
+  trolley %>% 
+  filter(!include_nofamiliarity) %>% 
+  group_by(Region) %>% 
+  summarise(Reason = "Familiarity of the research question",
+            n = n(), 
+            .groups = "drop")
+
+exclude_techproblem <- 
+  trolley %>% 
+  filter(!include_notechproblem) %>% 
+  group_by(Region) %>%   
+  summarise(Reason = "Technical problem",
+            n = n(), 
+            .groups = "drop")
+
+exclude_nonnative <- 
+  trolley %>% 
+  filter(!include_nonativelang) %>% 
+  group_by(Region) %>%   
+  summarise(Reason = "Non-native speaker",
+            n = n(), 
+            .groups = "drop")
+
+exclude_study1a <- 
+  trolley %>%
+  filter(!include_study1a) %>% 
+  group_by(Region) %>%   
+  summarise(Reason = "Failed attention check (Study1a)",
+            n = n(), 
+            .groups = "drop")
+
+exclude_study1b <- 
+  trolley %>% 
+  filter(!include_study1b) %>% 
+  group_by(Region) %>%   
+  summarise(Reason = "Failed attention check (Study1b)",
+            n = n(), 
+            .groups = "drop")
+
+exclude_study2a <-
+  trolley %>% 
+  filter(!include_study2a) %>% 
+  group_by(Region) %>% 
+  summarise(Reason = "Failed attention check (Study2a)",
+            n = n(), 
+            .groups = "drop")
+
+exclude_study2b <-
+  trolley %>% 
+  filter(!include_study2b) %>% 
+  group_by(Region) %>%   
+  summarise(Reason = "Failed attention check (Study2b)",
+            n = n(), 
+            .groups = "drop")
+
+# Create a table with all included studies in 
+all_wide <-
+  bind_rows(tibble(study = "study1a", count(study1a, Region)),
+            tibble(study = "study1b", count(study1b, Region)),
+            tibble(study = "study2a", count(study2a, Region)),
+            tibble(study = "study2b", count(study2b, Region))) %>% 
+  pivot_wider(names_from = "Region", 
+              values_from = "n", 
+              names_prefix = "n_") %>% 
+  mutate(info = "Final sample",
+         n_All = n_Eastern + n_Southern + n_Western,
+         Reason = str_glue("{str_to_sentence(study)}")) %>% 
+  select(-study)
+
+all_wide_wofamiliarity <-
+  bind_rows(tibble(study = "study1a", count(study1a, Region)),
+            tibble(study = "study1b", count(study1b, Region)),
+            tibble(study = "study2a", count(study2a, Region)),
+            tibble(study = "study2b", count(study2b, Region))) %>% 
+  pivot_wider(names_from = "Region", 
+              values_from = "n", 
+              names_prefix = "n_") %>% 
+  mutate(info = "Final sample",
+         n_All = n_Eastern + n_Southern + n_Western,
+         Reason = str_glue("{str_to_sentence(study)}")) %>% 
+  select(-study)
+
+exclude_all <-
+  bind_rows(exclude_careless,
+            exclude_confusion,
+            exclude_familiar,
+            exclude_techproblem,
+            exclude_nonnative,
+            exclude_study1a,
+            exclude_study1b,
+            exclude_study2a,
+            exclude_study2b) %>% 
+  left_join(all_responses, by = "Region") %>% 
+  mutate(perc = n / all) %>% 
+  select(-all) %>% 
+  pivot_wider(names_from = "Region", 
+              values_from = c(n, perc)) %>% 
+  mutate(n_All = n_Eastern + n_Southern + n_Western,
+         perc_All = n_All/nrow(trolley_proc),
+         info = "Reason to exclude")
+  
+# Exclusion reason by region (excluded participants can overlap!)
+exclude_table <-
+  exclude_all %>% 
+  bind_rows(all_wide) %>% 
+  group_by(info) %>% 
+  gt() %>% 
+  fmt_number(vars(n_Eastern, n_Southern, n_Western, n_All), 
+             decimals = 0) %>%
+  fmt_percent(columns = vars(perc_Eastern, perc_Southern, perc_Western, perc_All), decimals = 1) %>%
+  fmt_missing(everything(), missing_text = "") %>%
+  cols_merge(columns = vars(n_Eastern, perc_Eastern), 
+             pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_Southern, perc_Southern), 
+             pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_Western, perc_Western), 
+           pattern = "{1} ({2})") %>% 
+  cols_merge(columns = vars(n_All, perc_All), 
+       pattern = "{1} ({2})") %>% 
+  cols_label(Reason = " ",
+             n_Eastern = "Eastern",
+             n_Southern = "Southern",
+             n_Western = "Western",
+             n_All = "All") %>% 
+  cols_align("left", columns = "Reason") %>%
+  cols_align("right", columns = vars(n_Eastern, n_Southern, n_Western, n_All)) %>%
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999") %>% 
+  text_transform(locations = cells_body(
+                 columns = vars(n_Eastern, n_Southern, n_Western, n_All)),
+                          fn = function(x) {if_else(str_detect(x, "()"), 
+                                        str_remove(x, "\\(\\)"),
+                                        x)})
+
+exclude_table
+```
 
 
 #2. Main replication analysis
