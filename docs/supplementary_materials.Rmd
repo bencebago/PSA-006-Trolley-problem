@@ -36,9 +36,12 @@ trolley_raw <- read.csv("data/trolley_raw.csv")
 trolley <- read.csv("data/trolley.csv")
 
 study1a <- filter(trolley, include_study1a)
+study1a_ne <- filter(trolley, include_study1a_withoutfamiliarity)
+
 study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
+
 
 trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
 
@@ -297,7 +300,7 @@ tabledata_s1a_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat
 studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
 
-studys1a_results[,"RR"]<-c("1.5e-02, 4.7e+01", "3.0e-08, 9.0e+06", "4.0e-0.3, 1.4e+01", "8.0e-15, 2.0e+13", "1.0e-23, 1.9e+22", "2.0e-19, 6.0e+17")
+studys1a_results[,"RR"]<-c("7.00e-03, 14.00", "1.00e-05, 2.80e+06", "1.20e-02, 4.30", "<1.00e-05, 1.10e+04", "<1.00e-05, 6.30e+14", "<1.00e-05, 9.80e+07")
 
 kbl(
   studys1a_results,
@@ -501,7 +504,7 @@ studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
 rownames(studys1b_results) <- NULL
 studys1b_results[studys1b_results==0.000]<-"<.001"
 
-studys1b_results[,"RR"]<-c("2.6e-06, 5.7e+04", "3.0e-04, 2.5e+03", "6.0e-03, 4.3", "8.4e-10, 1.1e+08", "5.8e-18, 2.2e+16", "8.0e-18, 1.2e+16")
+studys1b_results[,"RR"]<-c("1.50e-0.3, 1.70e+04", "1.30e-03, 74.00", "3.30e-02, 1.2", "<1.00e-05, 9.50e+03", "<1.00e-05, 2.10e+08", "<1.00e-05, 1.0e+08")
 
 kbl(
   studys1b_results,
@@ -679,7 +682,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2a[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
@@ -697,7 +701,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2a_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
@@ -709,7 +714,7 @@ tabledata_s2a_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & da
 }
 studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
 rownames(studys2a_results) <- NULL
-studys2a_results[,"RR"]<-c("2.2e-01, Inf", "1.3e-0.2, 2.3", "<1.0e-04, 3.1e+10", "2.7e-0.4, 1.1e+03", "<1.0e-04, 8.9e+15", "<1.0e-04, >1.0e+18")
+studys2a_results[,"RR"]<-c("0.03, 0.64", "0.03, 0.2", "6.00e-05, 1.80e+03", "2.50e-02, 0.91", "8.00e-05, 1.70e+03", "<1.00e-05, 2.30e+14")
 
 
 kbl(
@@ -859,7 +864,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|d
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
@@ -878,7 +884,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|d
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2b_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
@@ -891,7 +898,7 @@ tabledata_s2b_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & da
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
 rownames(studys2b_results) <- NULL
 studys2b_results[studys2b_results==0.000]<-"<.001"
-studys2b_results[,"RR"]<-c("0, 2.8e-0.1", "2.2e-01, Inf", "1.2e-03, 1.5e+01, 3.1e+10", "8.0e-02, Inf", "0, 3.5e-01", "2.0e-0.3, 7.8e-01")
+studys2b_results[,"RR"]<-c("4.90e-02, 0.69", "5.10e-02, 0.63", "3.60e-02, 1.10", "2.60e-02, 0.72", "2.50e-02, 0.95", "1.40e-02, 1.30")
 
 
 kbl(
@@ -1080,7 +1087,8 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
@@ -1207,7 +1215,8 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2b_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2b_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2b_ind[i, "p"]=round(frequentist[8, "p.value"],3)
@@ -1335,7 +1344,8 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
@@ -1460,7 +1470,8 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2b_ind[i, "BF"]=signif(datt3[1,1],4)
 tabledata_s2b_ind[i, "b"]=round(frequentist[8, "estimate"],3)
 tabledata_s2b_ind[i, "p"]=round(frequentist[8, "p.value"],3)
@@ -1614,7 +1625,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2a[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
@@ -1634,7 +1646,8 @@ dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|d
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=as_tibble(datt/datt2)
+datt3=datt/datt2
+datt3=as_tibble(recompute(datt3, iterations = 50000))
 tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
 frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
@@ -1933,4 +1946,3 @@ papaja::apa_table(
   escape = TRUE
 )
 ```
-
