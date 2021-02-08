@@ -653,7 +653,7 @@ tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-
+tabledata_s2a[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 }
 
 tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -671,6 +671,7 @@ tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+tabledata_s2a_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 
 }
 studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
@@ -823,7 +824,7 @@ dat=subset(study2b, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_ra
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.19)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
@@ -832,6 +833,7 @@ tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+tabledata_s2b[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 
 }
 
@@ -841,7 +843,7 @@ dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.19)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2b_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
@@ -850,6 +852,7 @@ tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+tabledata_s2b_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 
 }
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
@@ -1585,6 +1588,7 @@ tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+tabledata_s2a[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 
 }
 
@@ -1595,7 +1599,7 @@ dat=subset(trolley_familiar, survey_name==i, select=c("speedboat_3_rate", "speed
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=0.19)
+datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
 datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
 datt3=as_tibble(datt/datt2)
 tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
@@ -1604,6 +1608,7 @@ tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+tabledata_s2b[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
 
 }
 
