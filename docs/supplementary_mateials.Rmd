@@ -137,6 +137,9 @@ detach(study2b)
 
 survey=levels(factor(trolley_proc$survey_name))
 
+cor.test(trolley_proc$hor_col, trolley_proc$familiarity)
+correlationBF(trolley_proc$hor_col, trolley_proc$familiarity)
+
 ```
 
 #1. Demographics and exclusion 
@@ -1507,6 +1510,7 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 
 
 #4. Additional analysis
+
 ##Familiar participants
 ```{r familiar analysis s1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
