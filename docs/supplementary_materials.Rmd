@@ -1883,3 +1883,15 @@ papaja::apa_table(
 )
 ```
 
+```{r, echo = FALSE}
+# Calculating robustness regions by hand
+source("R/Bf.R")
+Bf(sd = ,
+   obtained = ,
+   dfdata = ,
+   meanoftheory = ,
+   sdtheory = ,
+   dftheory = ,
+   tail = 1)
+```
+
