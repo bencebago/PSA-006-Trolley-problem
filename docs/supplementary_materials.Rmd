@@ -48,6 +48,10 @@ trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
 ```{r, echo = FALSE}
 # Calculate background information
 
+# Check if GBR001 is in the processed data
+trolley %>% 
+  distinct(survey_name, lab)
+
 # Show the labs who are in the raw dataset but not in the processed
 # Most likely these labs sent out the survey with the practice link
 missing_labs <-
@@ -55,7 +59,7 @@ missing_labs <-
  distinct(lab) %>%
  anti_join(., distinct(trolley_proc, lab), by = "lab")
 
-# show the number of participants missing in each lab
+# Show the number of participants missing in each lab
 trolley_raw %>%
  inner_join(., missing_labs, by = "lab") %>%
  count(lab) %>%
@@ -70,6 +74,35 @@ trolley_raw %>%
         !(lab == "USA_095")) %>%
  filter(Progress < 98) %>%
  count()
+
+# Show the number of labs
+trolley_raw %>% 
+  distinct(lab) %>% 
+  mutate(lab = case_when(lab == "USA_087?id=4012" ~ "USA_087",
+                         TRUE ~ lab)) %>%
+  drop_na(lab) %>% 
+  count()
+
+# Number of responses
+nrow(trolley)
+nrow(trolley_raw)
+
+# Number of participants after all exclusions
+n_after_all_exclusion <- 
+  trolley %>% 
+  filter(include_noproblem) %>% 
+  count()
+
+n_after_all_exclusion
+
+# Proportion of responses after all exclusion
+round(n_after_all_exclusion / nrow(trolley_raw) * 100, 2)
+
+# Number of languges
+trolley_raw %>% 
+  distinct(Q_Lang) %>% 
+  drop_na(Q_Lang) %>% 
+  count()
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -1871,6 +1904,12 @@ table_data <-
 table_data %>% 
   distinct(region, Country) %>% 
   count(region)
+
+# Check the number of countries
+table_data %>% 
+  distinct(Country) %>% 
+  count()
+
 # Missing coutnries since the Stage 1 manuscript:
 # Western: South Africa
 # Southern: El Salvador
@@ -1881,8 +1920,11 @@ table_data <-
   distinct(region, Country) %>% 
   group_by(region) %>% 
   arrange(Country) %>% 
+  filter(!(region == "Eastern" & Country == "United Kingdom")) %>% 
   summarise(countries = str_c(Country, collapse = ", ")) %>% 
   pivot_wider(names_from = region, values_from = countries)
+
+table_data$Eastern
 
 # Create APA formatted table
 papaja::apa_table(
@@ -1890,17 +1932,5 @@ papaja::apa_table(
   caption = "The Cultural Classification of Countries of Participating Labs Following Awad et al.",
   escape = TRUE
 )
-```
-
-```{r, echo = FALSE}
-# Calculating robustness regions by hand
-source("R/Bf.R")
-Bf(sd = ,
-   obtained = ,
-   dfdata = ,
-   meanoftheory = ,
-   sdtheory = ,
-   dftheory = ,
-   tail = 1)
 ```
 
