@@ -32,12 +32,10 @@ library(here)
 library(ggrepel)
 
 setwd("~/PSA-006-Trolley-problem")
-trolley_raw <- read.csv("data/trolley_raw.csv")
-trolley <- read.csv("data/trolley.csv")
+trolley_raw <- read_csv("data/trolley_raw.csv",guess_max = 10000L)
+trolley <- read_csv("data/trolley.csv",guess_max = 10000L)
 
 study1a <- filter(trolley, include_study1a)
-study1a_ne <- filter(trolley, include_study1a_withoutfamiliarity)
-
 study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
@@ -48,7 +46,7 @@ trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
 trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 # Calculate background information
 
 # Show the labs who are in the raw dataset but not in the processed
@@ -188,36 +186,36 @@ create_table <- function(data = NULL){
               row.striping.background_color = "#EEEEEE", 
               row.striping.include_stub = TRUE,
               row_group.background.color = "#999999", 
-              column_labels.background.color = "#999999", 
+              column_labels.background.color = "#999999" 
               )
   
 }
 
-#summaries <-
-#  trolley %>% 
-#  nest(data = everything()) %>% 
-#  mutate(country_sum = map(data, 
-#                             ~group_by(.x, Region, country3) %>% 
-#                             summarise_study() %>% 
-#                             left_join(cd, by = "country3") %>% 
-#                             add_column(grouping = "By country", .before = 1) %>% 
-#                             mutate(Country = countrycode(sourcevar = country3, 
-#                                                          origin = "iso3c",
-#                                                          destination = "country.name")) %>% 
-#                             arrange(Region, Country)),
-#         region_sum = map(data, ~group_by(.x, Region) %>% 
-#                            summarise_study() %>% 
-#                            add_column(grouping = "By region", .before = 1) %>% 
-#                            arrange(Region)),
-#         all_sum =map(data, ~summarise_study(.x) %>% 
-#                        add_column(grouping = "All", .before = 1) %>% 
-#                        mutate(Region = "All")),
-#         # Add the 3 level summaries into one dateset
-#         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
+summaries <-
+  trolley %>% 
+  nest(data = everything()) %>% 
+  mutate(country_sum = map(data, 
+                             ~group_by(.x, Region, country3) %>% 
+                             summarise_study() %>% 
+                             left_join(cd, by = "country3") %>% 
+                             add_column(grouping = "By country", .before = 1) %>% 
+                             mutate(Country = countrycode(sourcevar = country3, 
+                                                          origin = "iso3c",
+                                                          destination = "country.name")) %>% 
+                             arrange(Region, Country)),
+         region_sum = map(data, ~group_by(.x, Region) %>% 
+                            summarise_study() %>% 
+                            add_column(grouping = "By region", .before = 1) %>% 
+                            arrange(Region)),
+         all_sum =map(data, ~summarise_study(.x) %>% 
+                        add_column(grouping = "All", .before = 1) %>% 
+                        mutate(Region = "All")),
+         # Add the 3 level summaries into one dateset
+         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
          # Generate the tables
-#         gtable = map(bind_sum, create_table))
+         gtable = map(bind_sum, create_table))
 
-#summaries$gtable
+summaries$gtable
 
 # Verify
 #summaries$gtable[[1]] 
@@ -644,7 +642,7 @@ tabledata_s2a = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", 
 
 for (i in survey){
 dat=subset(study2a, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
+dat_long=na.omit(melt(data=dat, measure.vars=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
 datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
@@ -657,7 +655,7 @@ tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
+tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 
 tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -676,7 +674,7 @@ tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
+tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 
 }
 studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
@@ -839,8 +837,7 @@ tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2b[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
-
+tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 
 tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -859,8 +856,7 @@ tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2b_ne[i, "Raw effect"]=(mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)) 
-
+tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
 rownames(studys2b_results) <- NULL
@@ -1039,7 +1035,7 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
+  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
   datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
   frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
@@ -1268,6 +1264,7 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 ```
 
 ##Including familiar participants
+
 ```{r analysis individual + country level study 2a w familiar, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
 #table has 5lines: country level individualism, then individual level measures
@@ -1422,7 +1419,7 @@ for (i in vars){
   frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
   }else if(i=="hor_ind"){
-  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleFixed=0.26, rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
+  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
   datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
   frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
   frequentist=broom.mixed::tidy(frequentist_m)
@@ -1693,7 +1690,7 @@ additional_res_1 %>%
     escape = TRUE)
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Additional analysis after all exclusions
 additional_res_1_excluded <- 
   trolley %>%
@@ -1767,7 +1764,7 @@ additional_res_2 %>%
     escape = TRUE)
 ```
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 #Additional analysis after all exclusions
 additional_res_2_excluded <- 
   trolley %>%
@@ -1803,7 +1800,7 @@ additional_res_2_excluded %>%
 
 ##Oxford utilitarianism Scale
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 # Prepare data for plotting
 plot_data <-
   trolley_proc %>% 
@@ -1857,7 +1854,7 @@ plot_data %>%
 
 #Table 1
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 ### Some country codes are not standard iso codes; replace
 custom_countries <- 
   c("LEB" = "LBN", 
