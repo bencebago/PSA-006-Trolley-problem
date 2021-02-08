@@ -31,8 +31,9 @@ library(janitor)
 library(here)
 library(ggrepel)
 
-trolley_raw <- read.csv(here("data/trolley_raw.csv"))
-trolley <- read.csv(here("data/trolley.csv"))
+setwd("~/PSA-006-Trolley-problem")
+trolley_raw <- read.csv("data/trolley_raw.csv")
+trolley <- read.csv("data/trolley.csv")
 
 study1a <- filter(trolley, include_study1a)
 study1b <- filter(trolley, include_study1b)
@@ -73,8 +74,8 @@ trolley_raw %>%
 ```
 
 ```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-
-cd_raw <- read_csv(here("data/collectivism_similarity_matrix-from_culturaldistance.com.csv"))
+setwd("~/PSA-006-Trolley-problem")
+cd_raw <- read_csv("data/collectivism_similarity_matrix-from_culturaldistance.com.csv")
 
 cd <- 
   cd_raw %>% 
@@ -187,34 +188,34 @@ create_table <- function(data = NULL){
   
 }
 
-summaries <-
-  trolley %>% 
-  nest(data = everything()) %>% 
-  mutate(country_sum = map(data, 
-                             ~group_by(.x, Region, country3) %>% 
-                             summarise_study() %>% 
-                             left_join(cd, by = "country3") %>% 
-                             add_column(grouping = "By country", .before = 1) %>% 
-                             mutate(Country = countrycode(sourcevar = country3, 
-                                                          origin = "iso3c",
-                                                          destination = "country.name")) %>% 
-                             arrange(Region, Country)),
-         region_sum = map(data, ~group_by(.x, Region) %>% 
-                            summarise_study() %>% 
-                            add_column(grouping = "By region", .before = 1) %>% 
-                            arrange(Region)),
-         all_sum =map(data, ~summarise_study(.x) %>% 
-                        add_column(grouping = "All", .before = 1) %>% 
-                        mutate(Region = "All")),
-         # Add the 3 level summaries into one dateset
-         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
+#summaries <-
+#  trolley %>% 
+#  nest(data = everything()) %>% 
+#  mutate(country_sum = map(data, 
+#                             ~group_by(.x, Region, country3) %>% 
+#                             summarise_study() %>% 
+#                             left_join(cd, by = "country3") %>% 
+#                             add_column(grouping = "By country", .before = 1) %>% 
+#                             mutate(Country = countrycode(sourcevar = country3, 
+#                                                          origin = "iso3c",
+#                                                          destination = "country.name")) %>% 
+#                             arrange(Region, Country)),
+#         region_sum = map(data, ~group_by(.x, Region) %>% 
+#                            summarise_study() %>% 
+#                            add_column(grouping = "By region", .before = 1) %>% 
+#                            arrange(Region)),
+#         all_sum =map(data, ~summarise_study(.x) %>% 
+#                        add_column(grouping = "All", .before = 1) %>% 
+#                        mutate(Region = "All")),
+#         # Add the 3 level summaries into one dateset
+#         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows),
          # Generate the tables
-         gtable = map(bind_sum, create_table))
+#         gtable = map(bind_sum, create_table))
 
-summaries$gtable
+#summaries$gtable
 
 # Verify
-summaries$gtable[[1]] 
+#summaries$gtable[[1]] 
 
 # Save
 # gtsave(summaries$gtable[[1]], "docs/demo_table.html")
@@ -225,7 +226,7 @@ summaries$gtable[[1]]
 
 #2. Main replication analysis
 
-##Study 1a
+##Study 1a and 1b
 
 ###Bayesian analysis
 
@@ -243,6 +244,7 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1a[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1a[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1a[i, "p"]=round(frequentist$p.value,4)
+tabledata_s1a[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
 }
 
 tabledata_s1a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
@@ -255,10 +257,10 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1a_ne[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1a_ne[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1a_ne[i, "p"]=round(frequentist$p.value,4)
+tabledata_s1a_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
 }
 studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
-studys1a_results[,"p"]<-"<.001"
 
 studys1a_results[,"RR"]<-c("1.5e-02, 4.7e+01", "3.0e-08, 9.0e+06", "4.0e-0.3, 1.4e+01", "8.0e-15, 2.0e+13", "1.0e-23, 1.9e+22", "2.0e-19, 6.0e+17")
 
@@ -443,6 +445,8 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1b[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1b[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1b[i, "p"]=round(frequentist$p.value,3)
+tabledata_s1b[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
+
 }
 
 tabledata_s1b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
@@ -455,6 +459,8 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1b_ne[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1b_ne[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1b_ne[i, "p"]=round(frequentist$p.value,3)
+tabledata_s1b_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
+
 }
 studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
 rownames(studys1b_results) <- NULL
@@ -644,6 +650,8 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 
 tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -660,10 +668,11 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2a_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
 rownames(studys2a_results) <- NULL
-studys2a_results[studys2a_results==0.000]<-"<.001"
 studys2a_results[,"RR"]<-c("2.2e-01, Inf", "1.3e-0.2, 2.3", "<1.0e-04, 3.1e+10", "2.7e-0.4, 1.1e+03", "<1.0e-04, 8.9e+15", "<1.0e-04, >1.0e+18")
 
 
@@ -820,6 +829,8 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 
 tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -836,6 +847,8 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2b_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
 rownames(studys2b_results) <- NULL
@@ -1447,7 +1460,7 @@ kbl(
 countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
 
 for (i in levels(factor(trolley_proc$country3))){
-  d=subset(trolley_proc country3==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+  d=subset(trolley_proc, country3==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
   dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
   dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
   dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
@@ -1498,7 +1511,7 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 ```{r familiar analysis s1, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
 #use data study1a
-tabledata_s1a = data.frame(Dilemma=c(rep("Trolley",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF", "t", "df", "p"))))
+tabledata_s1a = data.frame(Dilemma=c(rep("Trolley",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=4, dimnames=list(survey,c("BF", "t", "df", "p"))))
 
 for (i in survey){
 dat=subset(trolley_familiar, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
@@ -1509,9 +1522,11 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1a[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1a[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1a[i, "p"]=round(frequentist$p.value,4)
+tabledata_s1a[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
+
 }
 
-tabledata_s1b = data.frame( Dilemma=c(rep("Speedboat",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF", "t", "df", "p"))))
+tabledata_s1b = data.frame( Dilemma=c(rep("Speedboat",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=4, dimnames=list(survey,c("BF", "t", "df", "p"))))
 
 for (i in survey){
 dat=subset(trolley_familiar, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
@@ -1522,6 +1537,8 @@ frequentist=t.test(rate ~ condition, data=dat_long)
 tabledata_s1b[i, "t"]=round(frequentist$statistic,2)
 tabledata_s1b[i, "df"]=round(frequentist$parameter,2)
 tabledata_s1b[i, "p"]=round(frequentist$p.value,3)
+tabledata_s1b[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
+
 }
 
 
@@ -1549,7 +1566,7 @@ kbl(
 
 #use data study1a
 
-tabledata_s2a = data.frame(Dilemma=c(rep("Trolley",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF", "F", "df", "p"))))
+tabledata_s2a = data.frame(Dilemma=c(rep("Trolley",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=4, dimnames=list(survey,c("BF", "F", "df", "p"))))
 
 for (i in survey){
 dat=subset(trolley_familiar, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
@@ -1564,10 +1581,12 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 
 
-tabledata_s2b = data.frame(Dilemma=c("Speedboat", "Speedboat", "Speedboat"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","F", "df", "p"))))
+tabledata_s2b = data.frame(Dilemma=c("Speedboat", "Speedboat", "Speedboat"),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=4, dimnames=list(survey,c("BF","F", "df", "p"))))
 for (i in survey){
 dat=subset(trolley_familiar, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
@@ -1581,6 +1600,8 @@ frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
 tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
+tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
+
 }
 
 familiar_results = rbind(tabledata_s2a, tabledata_s2b)
