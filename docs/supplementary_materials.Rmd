@@ -43,7 +43,6 @@ study2b <- filter(trolley, include_study2b)
 trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
 
 trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
-
 ```
 
 ```{r, echo = FALSE}
@@ -1665,13 +1664,14 @@ additional_res_1 %>%
             t,
             `Bf` = scales::scientific(bf),
             df,
-            p) %>% 
+            p = as.character(p),
+            p = if_else(as.numeric(p) < .001, "< .001", p)) %>% 
   papaja::apa_table(
     caption = "Effect of Physical Contact and Intention",
     escape = TRUE)
 ```
 
-```{r}
+```{r, echo = FALSE}
 # Additional analysis after all exclusions
 additional_res_1_excluded <- 
   trolley %>%
@@ -1702,7 +1702,8 @@ additional_res_1_excluded %>%
             t,
             `Bf` = scales::scientific(bf),
             df,
-            p) %>% 
+            p = as.character(p),
+            p = if_else(as.numeric(p) < .001, "< .001", p)) %>% 
   papaja::apa_table(
     caption = "Effect of Physical Contact and Intention",
     escape = TRUE)
@@ -1737,13 +1738,14 @@ additional_res_2 %>%
             t,
             `Bf` = scales::scientific(bf),
             df,
-            p) %>% 
+            p = as.character(p),
+            p = if_else(as.numeric(p) < .001, "< .001", p)) %>% 
   papaja::apa_table(
     caption = "Comparing the Standard Switch and Standard Footbridge Dilemmas",
     escape = TRUE)
 ```
 
-```{r}
+```{r, echo = FALSE}
 #Additional analysis after all exclusions
 additional_res_2_excluded <- 
   trolley %>%
@@ -1770,7 +1772,8 @@ additional_res_2_excluded %>%
             t,
             `Bf` = scales::scientific(bf),
             df,
-            p) %>% 
+            p = as.character(p),
+            p = if_else(as.numeric(p) < .001, "< .001", p)) %>% 
   papaja::apa_table(
     caption = "Comparing the Standard Switch and Standard Footbridge Dilemmas",
     escape = TRUE)
@@ -1778,7 +1781,7 @@ additional_res_2_excluded %>%
 
 ##Oxford utilitarianism Scale
 
-```{r}
+```{r, echo = FALSE}
 # Prepare data for plotting
 plot_data <-
   trolley_proc %>% 
@@ -1832,7 +1835,7 @@ plot_data %>%
 
 #Table 1
 
-```{r}
+```{r, echo = FALSE}
 ### Some country codes are not standard iso codes; replace
 custom_countries <- 
   c("LEB" = "LBN", 
