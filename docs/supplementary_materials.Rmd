@@ -1,7 +1,5 @@
 ---
-title: "Supplementary materials"
-author: "Bence Bago"
-date: "14 January 2021"
+title: "Supplementary Analysis"
 output:
   rmarkdown::pdf_document:
     extra_dependencies: ["float"]
@@ -39,7 +37,7 @@ study1a <- filter(trolley, include_study1a)
 study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
-
+#20.3, 18.4, 20.6, 18.2, 
 
 trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
 
@@ -297,6 +295,7 @@ tabledata_s1a_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat
 }
 studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
+studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
 
 studys1a_results[,"RR"]<-c("7.00e-03, 14.00", "1.00e-05, 2.80e+06", "1.20e-02, 4.30", "<1.00e-05, 1.10e+04", "<1.00e-05, 6.30e+14", "<1.00e-05, 9.80e+07")
 
@@ -500,7 +499,7 @@ tabledata_s1b_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat
 }
 studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
 rownames(studys1b_results) <- NULL
-studys1b_results[studys1b_results==0.000]<-"<.001"
+studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
 
 studys1b_results[,"RR"]<-c("1.50e-0.3, 1.70e+04", "1.30e-03, 74.00", "3.30e-02, 1.2", "<1.00e-05, 9.50e+03", "<1.00e-05, 2.10e+08", "<1.00e-05, 1.0e+08")
 
@@ -688,7 +687,7 @@ tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
+tabledata_s2a[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 
 tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -724,7 +723,7 @@ kbl(
   centering=T,
   position="H"
   )%>%
-  kable_styling( full_width = F,  position="left")%>%
+  kable_styling( full_width = F,  position="left", latex_options = "scale_down")%>%
   row_spec(row=0, bold=TRUE)%>%
   collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 
@@ -870,7 +869,7 @@ tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
+tabledata_s2b[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 
 tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
@@ -889,7 +888,7 @@ tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
 tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
 tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
 tabledata_s2b_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
+tabledata_s2b_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
 }
 studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
 rownames(studys2b_results) <- NULL
@@ -906,7 +905,7 @@ kbl(
   centering=T,
   position="H"
   )%>%
-  kable_styling( full_width = F,  position="left")%>%
+  kable_styling( full_width = F,  position="left", latex_options = "scale_down")%>%
   row_spec(row=0, bold=TRUE)%>%
   collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
 ```
