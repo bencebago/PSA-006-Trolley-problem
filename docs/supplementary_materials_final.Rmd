@@ -3,7 +3,7 @@ title: "Supplementary Analysis"
 output:
   rmarkdown::pdf_document:
     extra_dependencies: ["float"]
-    fig_caption: yes        
+    fig_caption: yes 
 header-includes: 
   \usepackage{float} \floatplacement{figure}{H} 
   \newcommand{\beginsupplement}{\setcounter{table}{0}  \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
@@ -76,13 +76,18 @@ study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
 
-trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
+study1a_nf <- filter(trolley, include_study1a_withoutfamiliarity)
+study1b_nf <- filter(trolley, include_study1b_withoutfamiliarity)
+study2a_nf <- filter(trolley, include_study2a_withoutfamiliarity)
+study2b_nf <- filter(trolley, include_study2b_withoutfamiliarity)
 
-trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
+
+
+trolley_familiar <- filter(trolley, !include_nofamiliarity)
 
 
 
-survey=levels(factor(trolley_proc$survey_name))
+survey=levels(factor(trolley$survey_name))
 
 
 
@@ -305,6 +310,7 @@ my_bf_extractor <- function(bf_obj) {
     dplyr::mutate(scale = stringr::str_extract(scale, "(?<=\\s)(.*)(?=\\s)"))
 }
 
+trolley_proc <- filter(trolley, include_allstudy)
 # Comparing standard footbridge with footbridge pole in every cluster
 additional_res_1 <- 
   trolley_proc %>% 
@@ -765,8 +771,8 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 <!-- Bayesian country level individualism w/o exclusion -->
 ```{r analysis individual + country level study 2a w/o excl, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-utilitarian_trolley <- filter(trolley_proc)
-utilitarian_speedboat <- filter(trolley_proc)
+utilitarian_trolley <- filter(trolley, include_study1a_withoutfamiliarity|include_study2a_withoutfamiliarity)
+utilitarian_speedboat <- filter(trolley, include_study1b_withoutfamiliarity|include_study2b_withoutfamiliarity)
 
 
 

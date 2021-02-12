@@ -58,9 +58,114 @@ cd <-
 
 ```
 
+```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+trolley=merge(trolley,cd, by="country3", all=T)
+trolley<-trolley[!is.na(trolley$survey_name),]
+
+
+attach(trolley)
+trolley$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
+trolley$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
+trolley$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
+trolley$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
+detach(trolley)
+
+study1a <- filter(trolley, include_study1a)
+study1b <- filter(trolley, include_study1b)
+study2a <- filter(trolley, include_study2a)
+study2b <- filter(trolley, include_study2b)
+
+#trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
+
+study1a_nf <- filter(trolley, include_study1a_withoutfamiliarity)
+study1b_nf <- filter(trolley, include_study1b_withoutfamiliarity)
+study2a_nf <- filter(trolley, include_study2a_withoutfamiliarity)
+study2b_nf <- filter(trolley, include_study2b_withoutfamiliarity)
+
+
+
+survey=levels(factor(trolley$survey_name))
+
+
+
+
+#cor.test(trolley_proc$hor_col, trolley_proc$familiarity)
+#correlationBF(trolley_proc$hor_col, trolley_proc$familiarity)
+
+```
 
 
 #1. Exclusion 
+```{r dem2,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+# Function to summarize studies into variables
+summarise_study <- function(data = NULL){
+  
+  stopifnot(!is.null(data))
+  
+  data %>% 
+    summarise(N = n(),
+            `Age Mean` = mean(Age, na.rm = TRUE),
+            `Age SD` = sd(Age, na.rm = TRUE),
+            `Male %` = mean(Gender == 1, na.rm = TRUE),
+            `Higher education %` = mean(`Higher education`, na.rm = TRUE),
+            .groups = "drop")
+  
+}
+
+summaries <-
+  trolley %>% 
+  nest(data = everything()) %>% 
+  mutate(country_sum = map(data, 
+                             ~group_by(.x, Region, country3) %>% 
+                             summarise_study() %>% 
+                             left_join(cd, by = "country3") %>% 
+                             add_column(grouping = "By country", .before = 1) %>% 
+                             mutate(Country = countrycode(sourcevar = country3, 
+                                                          origin = "iso3c",
+                                                          destination = "country.name")) %>% 
+                             arrange(Region, Country)),
+         region_sum = map(data, ~group_by(.x, Region) %>% 
+                            summarise_study() %>% 
+                            add_column(grouping = "By region", .before = 1) %>% 
+                            arrange(Region)),
+         all_sum =map(data, ~summarise_study(.x) %>% 
+                        add_column(grouping = "All", .before = 1) %>% 
+                        mutate(Region = "All")),
+         # Add the 3 level summaries into one dateset
+         bind_sum = pmap(list(country_sum, region_sum, all_sum), bind_rows))
+
+demo_table <-
+  summaries %>% 
+  select(bind_sum) %>% 
+  unnest(bind_sum) %>% 
+  relocate(Country, .before = country3) %>% 
+  select(-country3, -distance_year) %>% 
+  gt(groupname_col = "grouping", 
+     rowname_col = "Region") %>%
+  fmt_number(columns = vars(`Age Mean`, `Age SD`),
+             decimals = 1) %>% 
+  cols_merge(columns = vars(`Age Mean`, `Age SD`), 
+             pattern = "{1} ({2})") %>% 
+  fmt_number(columns = vars(Collectivism),
+             decimals = 3) %>% 
+  fmt_percent(columns = vars(`Male %`, `Higher education %`),
+              decimals = 1) %>% 
+  fmt_missing(vars(Country, Collectivism, 
+                   Region, grouping, `Higher education %`, 
+                   `Male %`, `Age SD`)) %>% 
+  cols_label(`Age Mean` = "Age (SD)") %>% 
+  tab_footnote(footnote = "Distance from the US in collectivism. Some countries do not have a collectivism score.",
+               locations = cells_column_labels(columns = vars(Collectivism))) %>% 
+  tab_options(row.striping.include_table_body = TRUE,
+              row.striping.background_color = "#EEEEEE", 
+              row.striping.include_stub = TRUE,
+              row_group.background.color = "#999999", 
+              column_labels.background.color = "#999999")
+
+demo_table
+
+```
 
 
 ```{r exclusion,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
@@ -230,39 +335,6 @@ exclude_table
 #2. Main replication analysis
 
 ##Study 1a and 1b
-```{r individualism score, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-
-trolley=merge(trolley,cd, by="country3", all=T)
-trolley<-trolley[!is.na(trolley$survey_name),]
-
-
-attach(trolley)
-trolley$hor_ind=rowMeans(cbind(individualism_scale_1, individualism_scale_2,individualism_scale_3,individualism_scale_4))
-trolley$ver_ind=rowMeans(cbind(individualism_scale_5, individualism_scale_6,individualism_scale_7,individualism_scale_8))
-trolley$hor_col=rowMeans(cbind(individualism_scale_9, individualism_scale_10,individualism_scale_11,individualism_scale_12))
-trolley$ver_col=rowMeans(cbind(individualism_scale_13, individualism_scale_14,individualism_scale_15,individualism_scale_16))
-detach(trolley)
-
-study1a <- filter(trolley, include_study1a)
-study1b <- filter(trolley, include_study1b)
-study2a <- filter(trolley, include_study2a)
-study2b <- filter(trolley, include_study2b)
-
-trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
-
-trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
-
-
-
-survey=levels(factor(trolley_proc$survey_name))
-
-
-
-
-#cor.test(trolley_proc$hor_col, trolley_proc$familiarity)
-#correlationBF(trolley_proc$hor_col, trolley_proc$familiarity)
-
-```
 
 
 ###Bayesian analysis
@@ -286,7 +358,7 @@ tabledata_s1a[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_lo
 
 tabledata_s1a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
+dat=subset(study1a_nf, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
 tabledata_s1a_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
@@ -298,7 +370,7 @@ tabledata_s1a_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat
 }
 studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
 rownames(studys1a_results) <- NULL
-studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
+studys1a_results$p=ifelse(as.numeric(studys1a_results$p) < .001, "< .001", p)
 
 studys1a_results[,"RR"]<-c("7.00e-03, 14.00", "1.00e-05, 2.80e+06", "1.20e-02, 4.30", "<1.00e-05, 1.10e+04", "<1.00e-05, 6.30e+14", "<1.00e-05, 9.80e+07")
 
@@ -400,7 +472,7 @@ plot_data %>%
 ```{r Study1a w/o excl graph, fig.pos = "H",out.width = "80%",fig.cap = "Results on Trolley dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo = FALSE, message = FALSE, warning = FALSE, paged.print = FALSE }
 # Prepare data for plotting
 plot_data <- 
-  trolley_proc %>% 
+  study1a_nf %>% 
   select(survey_name, trolley_1_rate, trolley_2_rate) %>% 
   mutate(survey_name = factor(survey_name)) %>% 
   pivot_longer(
@@ -471,7 +543,6 @@ plot_data %>%
 
 ```{r Study1b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-survey=levels(factor(trolley_proc$survey_name))
 tabledata_s1b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 
 for (i in survey){
@@ -489,7 +560,7 @@ tabledata_s1b[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_lo
 
 tabledata_s1b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
 for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
+dat=subset(study1b_nf, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
 tabledata_s1b_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
@@ -502,7 +573,7 @@ tabledata_s1b_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat
 }
 studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
 rownames(studys1b_results) <- NULL
-studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
+studys1b_results$p=ifelse(as.numeric(studys1b_results$p) < .001, "< .001", studys1b_results$p)
 
 studys1b_results[,"RR"]<-c("1.50e-0.3, 1.70e+04", "1.30e-03, 74.00", "3.30e-02, 1.2", "<1.00e-05, 9.50e+03", "<1.00e-05, 2.10e+08", "<1.00e-05, 1.0e+08")
 
@@ -599,7 +670,7 @@ plot_data %>%
 ```{r Study1b w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Speedboat dilemmas in Study 1 with no exclusion criteria applied. Black full circles indicate group level means.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 # Prepare data for plotting
 plot_data <- 
-  trolley_proc %>% 
+  study1b_nf %>% 
   select(survey_name, speedboat_1_rate, speedboat_2_rate) %>% 
   mutate(survey_name = factor(survey_name)) %>% 
   pivot_longer(
@@ -695,7 +766,7 @@ tabledata_s2a[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 &
 
 tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+dat=subset(study2a_nf, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -797,7 +868,7 @@ plot_data %>%
 ```{r Study2a w/o excl graph, fig.pos="H",out.width="80%",fig.cap="Results on Trolley dilemmas in Study 2 when no exclusion criteria are applied. Error bars are 95\\% confidence intervals on the mean. ",  echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 # Prepare data for plotting
 plot_data <- 
-  trolley_proc %>% 
+  study2a_nf %>% 
   select(survey_name, trolley_3_rate, trolley_4_rate, trolley_5_rate, trolley_6_rate) %>% 
   mutate(survey_name = factor(survey_name)) %>% 
   pivot_longer(
@@ -877,7 +948,7 @@ tabledata_s2b[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 &
 
 tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
 for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+dat=subset(study2b_nf, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
@@ -979,7 +1050,7 @@ plot_data %>%
 ```{r study2b w/o excl graph,fig.pos="H",out.width="80%",fig.cap="Results on the Speedboat dilemmas in Study 2 when no exclusion criteria is applied. Error bars are 95\\% confidence intervals on the mean.", echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE }
 # Prepare data for plotting
 plot_data <- 
-  trolley_proc %>% 
+  study2b_nf %>% 
   select(survey_name, speedboat_3_rate, speedboat_4_rate, speedboat_5_rate, speedboat_6_rate) %>% 
   mutate(survey_name = factor(survey_name)) %>% 
   pivot_longer(
@@ -1302,11 +1373,10 @@ ggplot(graphdata, aes(x=variable, y=b, width=0.7)) +
 ```{r analysis individual + country level study 2a w familiar, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 #for loop changes predictor variables
 #table has 5lines: country level individualism, then individual level measures
-
 vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
 tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
 
-dat=subset(trolley_proc,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
+dat=subset(study2a_nf,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -1376,10 +1446,10 @@ kbl(
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
-countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+countrydata=data.frame(country=levels(factor(study2a_nf$country3)), matrix(nrow=length(levels(factor(study2a_nf$country3))),ncol=3, dimnames=list(levels(factor(study2a_nf$country3)), c("cohend","Collectivism","N") )))
 
-for (i in levels(factor(trolley_proc$country3))){
-  d=subset(trolley_proc, country3==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
+for (i in levels(factor(study2a_nf$country3))){
+  d=subset(study2a_nf, country3==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
   dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
   dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
   dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
@@ -1388,7 +1458,7 @@ for (i in levels(factor(trolley_proc$country3))){
   }else{
     countrydata[i,"cohend"]=effectsize::eta_squared(aov(rate~intention:personal_force, data=dat_long))$Eta2
   }
-  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"Collectivism"]=mean(study2a_nf[study2a_nf$country3==i,]$Collectivism, na.rm=T)
   countrydata[i,"N"]=length(dat_long$rate)
 }
 
@@ -1433,7 +1503,7 @@ tabledata_s2b_ind = data.frame(variable=c("Country-level collectivism", "Vertica
 graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
 
 
-dat=subset(trolley_proc,  select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "country3", vars))
+dat=subset(study2b_nf,  select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate", "country3", vars))
 dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
 dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
 dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
@@ -1504,10 +1574,10 @@ kbl(
 ##cohen d calculation for every country
 #scatterplot: x effect size, y individualism
 #size of dots: cohen d
-countrydata=data.frame(country=levels(factor(trolley_proc$country3)), matrix(nrow=length(levels(factor(trolley_proc$country3))),ncol=3, dimnames=list(levels(factor(trolley_proc$country3)), c("cohend","Collectivism","N") )))
+countrydata=data.frame(country=levels(factor(study2b_nf$country3)), matrix(nrow=length(levels(factor(study2b_nf$country3))),ncol=3, dimnames=list(levels(factor(study2b_nf$country3)), c("cohend","Collectivism","N") )))
 
-for (i in levels(factor(trolley_proc$country3))){
-  d=subset(trolley_proc, country3==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
+for (i in levels(factor(study2b_nf$country3))){
+  d=subset(study2b_nf, country3==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
   dat_long=na.omit(melt(data=d, variable.name = "condition", value.name="rate"))
   dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
   dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
@@ -1516,7 +1586,7 @@ for (i in levels(factor(trolley_proc$country3))){
   }else{
     countrydata[i,"cohend"]=effectsize::eta_squared(aov(rate~intention:personal_force, data=dat_long))$Eta2
   }
-  countrydata[i,"Collectivism"]=mean(trolley_proc[trolley_proc$country3==i,]$Collectivism, na.rm=T)
+  countrydata[i,"Collectivism"]=mean(study2b_nf[study2b_nf$country3==i,]$Collectivism, na.rm=T)
   countrydata[i,"N"]=length(dat_long$rate)
 }
 
