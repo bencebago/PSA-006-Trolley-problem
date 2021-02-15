@@ -29,7 +29,7 @@ library(janitor)
 library(here)
 library(ggrepel)
 
-setwd("~/PSA-006-Trolley-problem")
+# setwd("~/PSA-006-Trolley-problem")
 trolley <- read_csv("data/trolley.csv",guess_max = 10000L)
 
 ```
@@ -136,6 +136,20 @@ demo_table
 ## Exclusion
 
 ```{r exclusion,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# exclusions <-
+  trolley %>% 
+  nest(data = everything()) %>% 
+  mutate(all_responses = map(data, ~count(.x, Region, 
+                                              name = "all", .drop = TRUE)),
+         exclude_careless = map(data, ~filter(.x, !include_nocareless) %>% 
+                                      group_by(Region) %>% 
+                                      summarise(Reason = "Careless responding",
+                                                n = n(), .groups = "drop")
+                                  )
+         ) %>% 
+  pivot_longer()
+
 all_responses <- 
   trolley %>% 
   count(Region, name = "all", .drop = TRUE)
@@ -312,6 +326,11 @@ study1b <- filter(trolley, include_study1b)
 study2a <- filter(trolley, include_study2a)
 study2b <- filter(trolley, include_study2b)
 
+study1a_nf <- filter(trolley, include_study1a_withoutfamiliarity)
+study1b_nf <- filter(trolley, include_study1b_withoutfamiliarity)
+study2a_nf <- filter(trolley, include_study2a_withoutfamiliarity)
+study2b_nf <- filter(trolley, include_study2b_withoutfamiliarity)
+
 trolley_proc <- filter(trolley, include_allstudy_withoutfamiliarity)
 
 trolley_familiar <- filter(trolley_proc, !include_nofamiliarity)
@@ -356,38 +375,19 @@ survey=levels(factor(trolley_proc$survey_name))
 
 ```{r Study1a Bayesian, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
-#use data study1a
-tabledata_s1a = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+source(here("R/calculate_study1_stat.R"))
 
-for (i in survey){
-dat=subset(study1a, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
-tabledata_s1a[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
-frequentist=t.test(rate ~ condition, data=dat_long)
-tabledata_s1a[i, "t"]=round(frequentist$statistic,2)
-tabledata_s1a[i, "df"]=round(frequentist$parameter,2)
-tabledata_s1a[i, "p"]=round(frequentist$p.value,4)
-tabledata_s1a[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
-}
+rscale <- .26
+vars1a <- c("trolley_1_rate", "trolley_2_rate")
 
-tabledata_s1a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
-for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("trolley_1_rate", "trolley_2_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
-tabledata_s1a_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
-frequentist=t.test(rate ~ condition, data=dat_long)
-tabledata_s1a_ne[i, "t"]=round(frequentist$statistic,2)
-tabledata_s1a_ne[i, "df"]=round(frequentist$parameter,2)
-tabledata_s1a_ne[i, "p"]=round(frequentist$p.value,4)
-tabledata_s1a_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
-}
-studys1a_results = rbind(tabledata_s1a, tabledata_s1a_ne)
-rownames(studys1a_results) <- NULL
-studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
-
-studys1a_results[,"RR"]<-c("7.00e-03, 14.00", "1.00e-05, 2.80e+06", "1.20e-02, 4.30", "<1.00e-05, 1.10e+04", "<1.00e-05, 6.30e+14", "<1.00e-05, 9.80e+07")
+studys1a_results <- 
+  bind_rows(calculate_study1_stat(study1a, vars = vars1a, 
+                                  label = "Exclude"), 
+            calculate_study1_stat(study1a_nf, vars = vars1a, 
+                                  label = "Including familiar")) %>% 
+  # RR was calculated by manual iteration
+  mutate( RR = c("7.00e-03, 14.00", "1.00e-05, 2.80e+06", "1.20e-02, 4.30", "<1.00e-05, 1.10e+04", "<1.00e-05, 6.30e+14", "<1.00e-05, 9.80e+07"),
+          p = if_else(as.numeric(p) < .001, "<.001", p))
 
 kbl(
   studys1a_results,
@@ -558,53 +558,31 @@ plot_data %>%
 
 ```{r Study1b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-survey=levels(factor(trolley_proc$survey_name))
-tabledata_s1b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
+rscale <- .26
+vars1b <- c("speedboat_1_rate", "speedboat_2_rate")
 
-for (i in survey){
-dat=subset(study1b, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
-tabledata_s1b[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
-frequentist=t.test(rate ~ condition, data=dat_long)
-tabledata_s1b[i, "t"]=round(frequentist$statistic,2)
-tabledata_s1b[i, "df"]=round(frequentist$parameter,2)
-tabledata_s1b[i, "p"]=round(frequentist$p.value,3)
-tabledata_s1b[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
-
-}
-
-tabledata_s1b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "t", "df", "p"))))
-for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("speedboat_1_rate", "speedboat_2_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-datt=as_tibble(ttestBF(formula = rate ~ condition, data=dat_long, rscale=0.26, nullInterval = c(0, Inf)))
-tabledata_s1b_ne[i, "BF"]=signif(round(as.numeric(datt[2,1]),1),2)
-frequentist=t.test(rate ~ condition, data=dat_long)
-tabledata_s1b_ne[i, "t"]=round(frequentist$statistic,2)
-tabledata_s1b_ne[i, "df"]=round(frequentist$parameter,2)
-tabledata_s1b_ne[i, "p"]=round(frequentist$p.value,3)
-tabledata_s1b_ne[i, "Cohen d"]=round(effsize::cohen.d(rate ~ condition, data=dat_long)[[3]] ,2)
-
-}
-studys1b_results = rbind(tabledata_s1b, tabledata_s1b_ne)
-rownames(studys1b_results) <- NULL
-studys1a_results$p=if_else(as.numeric(p) < .001, "< .001", p)
-
-studys1b_results[,"RR"]<-c("1.50e-0.3, 1.70e+04", "1.30e-03, 74.00", "3.30e-02, 1.2", "<1.00e-05, 9.50e+03", "<1.00e-05, 2.10e+08", "<1.00e-05, 1.0e+08")
+studys1b_results <- 
+  bind_rows(calculate_study1_stat(study1b, vars = vars1b, 
+                                  label = "Exclude"), 
+            calculate_study1_stat(study1b_nf, vars = vars1b, 
+                                  label = "Including familiar")) %>% 
+  # RR was calculated by manual iteration
+  mutate( RR = c("1.50e-0.3, 1.70e+04", "1.30e-03, 74.00", "3.30e-02, 1.2", "<1.00e-05, 9.50e+03", "<1.00e-05, 2.10e+08", "<1.00e-05, 1.0e+08"),
+          p = if_else(as.numeric(p) < .001, "<.001", p))
 
 kbl(
   studys1b_results,
   format = "latex",
-  booktabs = T,
-  escape=T,
+  booktabs = TRUE,
+  escape= TRUE,
   caption = " The effect of personal force on moral dilemma judgements on Speedboat dilemmas",
-  centering=T,
-  position="H"
+  centering = TRUE,
+  position = "H"
   )%>%
-  kable_styling( full_width = F,  position="left")%>%
-  row_spec(row=0, bold=TRUE)%>%
-  collapse_rows(columns = 1, valign = "top", latex_hline = "major", row_group_label_position = "identity")
+  kable_styling(full_width = FALSE, position="left")%>%
+  row_spec(row = 0, bold = TRUE)%>%
+  collapse_rows(columns = 1, valign = "top", latex_hline = "major",  
+                row_group_label_position = "identity")
 ```
 
 
@@ -760,49 +738,18 @@ plot_data %>%
 
 ```{r Study2a Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
-tabledata_s2a = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
+source(here("R/calculate_study2_stat.R"))
+rscaleFixed <- c("personal_force:intention"=0.19)
+vars2a <- c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate")
 
-for (i in survey){
-dat=subset(study2a, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-dat_long=na.omit(melt(data=dat, measure.vars=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"), variable.name = "condition", value.name="rate"))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=datt/datt2
-datt3=as_tibble(recompute(datt3, iterations = 50000))
-tabledata_s2a[i, "BF"]=signif(round(datt3[1,1],1),2)
-frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
-tabledata_s2a[i, "F"]=round(frequentist[3, "F value"],3)
-tabledata_s2a[i, "df"]=paste("1, ", frequentist[4, "Df"])
-tabledata_s2a[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
-tabledata_s2a[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
-}
-
-tabledata_s2a_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
-for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=datt/datt2
-datt3=as_tibble(recompute(datt3, iterations = 50000))
-tabledata_s2a_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
-frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
-tabledata_s2a_ne[i, "F"]=round(frequentist[3, "F value"],3)
-tabledata_s2a_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
-tabledata_s2a_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
-tabledata_s2a_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2a_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
-
-}
-studys2a_results = rbind(tabledata_s2a, tabledata_s2a_ne)
-rownames(studys2a_results) <- NULL
-studys2a_results[,"RR"]<-c("0.03, 0.64", "0.03, 0.2", "6.00e-05, 1.80e+03", "2.50e-02, 0.91", "8.00e-05, 1.70e+03", "<1.00e-05, 2.30e+14")
-
+studys2a_results <- 
+  bind_rows(calculate_study2_stat(study2a, vars = vars2a, 
+                                  label = "Exlusion"), 
+            calculate_study2_stat(study2a_nf, vars = vars2a, 
+                                  label = "Include familiar")) %>% 
+  # RR was calculated by manual iteration
+  mutate( RR = c(c("0.03, 0.64", "0.03, 0.2", "6.00e-05, 1.80e+03", "2.50e-02, 0.91", "8.00e-05, 1.70e+03", "<1.00e-05, 2.30e+14")),
+          p = if_else(as.numeric(p) < .001, "<.001", p))
 
 kbl(
   studys2a_results,
@@ -942,49 +889,19 @@ plot_data %>%
 ```
 
 ```{r study2b Bayesian, echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-tabledata_s2b = data.frame(Exclusion=c(rep("Exclusion",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
-##ggrepel grom_text repel
-for (i in survey){
-dat=subset(study2b, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=datt/datt2
-datt3=as_tibble(recompute(datt3, iterations = 50000))
-tabledata_s2b[i, "BF"]=signif(round(datt3[1,1],1),2)
-frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
-tabledata_s2b[i, "F"]=round(frequentist[3, "F value"],3)
-tabledata_s2b[i, "df"]=paste("1, ", frequentist[4, "Df"])
-tabledata_s2b[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
-tabledata_s2b[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2b[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
-}
 
-tabledata_s2b_ne = data.frame(Exclusion=c(rep("Including familiar",3)),Cluster=c("Eastern", "Southern", "Western"), matrix(nrow=3, ncol=5, dimnames=list(survey,c("BF","RR", "F", "df", "p"))))
-for (i in survey){
-dat=subset(trolley_proc, survey_name==i, select=c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate"))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate"))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="speedboat_3_rate"|dat_long$condition=="speedboat_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="speedboat_4_rate"|dat_long$condition=="speedboat_5_rate", 1, 0))
-datt=lmBF(rate ~ personal_force*intention, data=dat_long, rscaleFixed=c("personal_force:intention"=0.19))
-datt2=lmBF(rate ~ personal_force+intention, data=dat_long)
-datt3=datt/datt2
-datt3=as_tibble(recompute(datt3, iterations = 50000))
-tabledata_s2b_ne[i, "BF"]=signif(round(datt3[1,1],1),2)
-frequentist=summary(aov(rate ~ personal_force*intention, data=dat_long))[[1]]
-tabledata_s2b_ne[i, "F"]=round(frequentist[3, "F value"],3)
-tabledata_s2b_ne[i, "df"]=paste("1, ", frequentist[4, "Df"])
-tabledata_s2b_ne[i, "p"]=round(frequentist[3, "Pr(>F)"],3)
-tabledata_s2b_ne[i, "Eta squared"]=round(DescTools::EtaSq(aov(rate ~ personal_force*intention, data=dat_long))[3,2],3)
-tabledata_s2b_ne[i, "Raw effect"]=round((mean(dat_long[dat_long$personal_force==0 & dat_long$intention==0,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==0,]$rate,na.rm=T)) - (mean(dat_long[dat_long$personal_force==0 & dat_long$intention==1,]$rate,na.rm=T) - mean(dat_long[dat_long$personal_force==1 & dat_long$intention==1,]$rate,na.rm=T)),2) 
-}
-studys2b_results = rbind(tabledata_s2b, tabledata_s2b_ne)
-rownames(studys2b_results) <- NULL
-studys2b_results[studys2b_results==0.000]<-"<.001"
-studys2b_results[,"RR"]<-c("4.90e-02, 0.69", "5.10e-02, 0.63", "3.60e-02, 1.10", "2.60e-02, 0.72", "2.50e-02, 0.95", "1.40e-02, 1.30")
+rscaleFixed <- c("personal_force:intention" = 0.19)
+vars2b <- c("speedboat_3_rate", "speedboat_4_rate", "speedboat_5_rate", "speedboat_6_rate")
 
+studys2b_results <- 
+  bind_rows(calculate_study2_stat(study2b, vars = vars2b, 
+                                  label = "Exlusion"), 
+            calculate_study2_stat(study2b_nf, vars = vars2b, 
+                                  label = "Include familiar")) %>% 
+  # RR was calculated by manual iteration
+  mutate( RR = c("4.90e-02, 0.69", "5.10e-02, 0.63", "3.60e-02, 1.10", "2.60e-02, 0.72", "2.50e-02, 0.95", "1.40e-02, 1.30"),
+          p = if_else(as.numeric(p) < .001, "<.001", p),
+          BF = round(as.numeric(BF), 2))
 
 kbl(
   studys2b_results,
