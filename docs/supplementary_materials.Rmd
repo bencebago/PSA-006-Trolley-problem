@@ -28,6 +28,7 @@ library(gt)
 library(janitor)
 library(here)
 library(ggrepel)
+library(broom.mixed)
 
 # setwd("~/PSA-006-Trolley-problem")
 trolley <- read_csv("data/trolley.csv",guess_max = 10000L)
@@ -136,19 +137,6 @@ demo_table
 ## Exclusion
 
 ```{r exclusion,echo=FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
-
-# exclusions <-
-  trolley %>% 
-  nest(data = everything()) %>% 
-  mutate(all_responses = map(data, ~count(.x, Region, 
-                                              name = "all", .drop = TRUE)),
-         exclude_careless = map(data, ~filter(.x, !include_nocareless) %>% 
-                                      group_by(Region) %>% 
-                                      summarise(Reason = "Careless responding",
-                                                n = n(), .groups = "drop")
-                                  )
-         ) %>% 
-  pivot_longer()
 
 all_responses <- 
   trolley %>% 
@@ -1046,74 +1034,106 @@ plot_data %>%
 ##With all exclusions
 
 <!-- Bayesian country level individualism w/o exclusion -->
+
 ```{r analysis individual + country level study 2a, echo =FALSE,message=FALSE, warning=FALSE, paged.print=FALSE}
 
+# Create a tibble that contains the labels for the cultural variables
+cultural_vars <-
+  tibble(var = c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col"),
+         variable = c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"))
 
-vars=c("Collectivism", "ver_ind", "hor_ind", "ver_col", "hor_col")
-tabledata_s2a_ind = data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("BF", "b",  "p"))))
+# Create a nested tibble that can be mapped through
+dat_long <-
+  study2a %>% 
+  select(country3, trolley_3_rate, trolley_4_rate, 
+         trolley_5_rate, trolley_6_rate,
+         all_of(cultural_vars$var)) %>% 
+  # Collapse conditions
+  pivot_longer(cols = c(trolley_3_rate, trolley_4_rate, 
+                        trolley_5_rate, trolley_6_rate),
+               names_to = "condition", 
+               values_to = "rate",
+               values_drop_na = TRUE) %>% 
+  # Creating predictors based on the condition
+  mutate(personal_force = if_else(str_detect(condition, "3|5"), 0, 1),
+         intention = if_else(str_detect(condition, "4|5"), 1, 0),
+  # What is this??? lmBF doesn't run without it?!?!?
+         country0 = paste0("0", country3)
+         ) %>% 
+  drop_na() %>% 
+  # Create separate nested datasets to all cultural variables
+  pivot_longer(cols = cultural_vars$var, names_to = "var") %>% 
+  group_by(var) %>%
+  nest() %>% 
+  ungroup()
 
-dat=subset(study2a,  select=c("trolley_3_rate", "trolley_4_rate", "trolley_5_rate", "trolley_6_rate", "country3", vars))
-dat_long=na.omit(melt(data=dat, variable.name = "condition", value.name="rate", id.vars=c(vars, "country3")))
-dat_long$personal_force = factor(ifelse(dat_long$condition=="trolley_3_rate"|dat_long$condition=="trolley_5_rate", 0, 1))
-dat_long$intention = factor(ifelse(dat_long$condition=="trolley_4_rate"|dat_long$condition=="trolley_5_rate", 1, 0))
-dat_long$country3=as.character(dat_long$country3)
-dat_long$country3=factor(paste0("0", dat_long$country3))
+# Map through the datasets and create stat models using a specific cultural variable
+results <-
+  dat_long %>% 
+  mutate(
+         datt = map2(data, var,
+                     ~lmBF(rate ~ personal_force*intention*value +
+                                  country0,
+                           whichRandom = "country0",
+                           data = as.data.frame(.x),
+  # Set prior dynamically, based on the interaction with a specific variable
+                           rscaleCont = set_names(0.19, str_glue("personal_force:intention:{.y}")))),
+         datt2 = map(data,
+                     ~lmBF(rate ~ personal_force + intention + value +
+                           personal_force:value +
+                           personal_force:intention + intention:value +
+                           country0,
+                           whichRandom = "country0",
+                           data = as.data.frame(.x))),
+         datt3 = map2(datt, datt2, ~recompute((.x/.y), iterations = 50000) %>% 
+                                    as_tibble()),
+         frequentist = map(data, 
+                           ~lmer(rate ~ personal_force*intention*value +
+                                       (1|country3),
+                                 data = .x) %>% 
+                            tidy(conf.int = TRUE)))
 
-graphdata=data.frame(variable=c("Country-level collectivism", "Vertical Individualism", "Horizontal Individualism", "Vertical Collectivism", "Horizontal Collectivism"), matrix(nrow=5, ncol=3, dimnames=list(vars,c("b",  "lower", "higher"))))
+# Create a summary table from the models
+tabledata_s2a_ind <-
+  results %>% 
+  left_join(cultural_vars, by = "var") %>% 
+  transmute(variable, 
+            BF = map_dbl(datt3, ~slice(.x) %>% 
+                                 pull(bf) %>% 
+                                 round(4)),
+            b = map_dbl(frequentist, 
+                        ~filter(.x, term == "personal_force:intention:value") %>% 
+                          pull(estimate) %>% 
+                          round(4)),
+            lower = map_dbl(frequentist, 
+                             ~filter(.x, term == "personal_force:intention:value") %>% 
+                              pull(conf.low) %>% 
+                              round(4)),
+            higher = map_dbl(frequentist, 
+                             ~filter(.x, term == "personal_force:intention:value") %>% 
+                              pull(conf.high) %>% 
+                              round(4)),
+            p = map_dbl(frequentist, 
+                        ~filter(.x, term == "personal_force:intention:value") %>% 
+                         pull(p.value) %>% 
+                         round(4))
+  )
 
-for (i in vars){
-  if(i=="Collectivism"){
-  datt=lmBF(rate ~   personal_force*intention*Collectivism + country3, data=dat_long, whichRandom="country3",rscaleCont = c("personal_force:intention:Collectivism" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+Collectivism+personal_force:Collectivism+personal_force:intention+intention:Collectivism+country3, whichRandom="country3",data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*Collectivism +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  } else if(i=="ver_ind"){
-  datt=lmBF(rate ~   personal_force*intention*ver_ind+country3, data=dat_long,  whichRandom="country3",  rscaleCont = c("personal_force:intention:ver_ind" = 0.19))
-  datt2=lmBF(rate ~ personal_force+intention+ver_ind+personal_force:ver_ind+personal_force:intention+intention:ver_ind +country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_ind"){
-  datt=lmBF(rate ~   personal_force*intention*hor_ind+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:hor_ind" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_ind+personal_force:hor_ind+personal_force:intention+intention:hor_ind+country3,  whichRandom="country3", data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_ind +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="ver_col"){
-  datt=lmBF(rate ~   personal_force*intention*ver_col+country3, data=dat_long,  whichRandom="country3", rscaleCont = c("personal_force:intention:ver_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+ver_col+personal_force:ver_col+personal_force:intention+intention:ver_col +country3,  whichRandom="country3",  data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*ver_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }else if(i=="hor_col"){
-  datt=lmBF(rate ~  personal_force*intention*hor_col+country3, data=dat_long, whichRandom="country3", rscaleCont = c("personal_force:intention:hor_col" = 0.19))
-  datt2=lmBF(rate ~  personal_force+intention+hor_col+personal_force:hor_col+personal_force:intention+intention:hor_col +country3,  whichRandom="country3",   data=dat_long)  
-  frequentist_m=lmer(rate ~ personal_force*intention*hor_col +(1|country3), data=dat_long)
-  frequentist=broom.mixed::tidy(frequentist_m)
-  }
-datt3=datt/datt2
-datt3=as_tibble(recompute(datt3, iterations = 50000))
-tabledata_s2a_ind[i, "BF"]=signif(datt3[1,1],4)
-tabledata_s2a_ind[i, "b"]=round(frequentist[8, "estimate"],3)
-tabledata_s2a_ind[i, "p"]=round(frequentist[8, "p.value"],3)
-graphdata[i, "b"]=round(frequentist[8, "estimate"],3)
-graphdata[i, "lower"]=round(confint(frequentist_m),2)[10,1]
-graphdata[i, "higher"]=round(confint(frequentist_m),2)[10,2]
-
-}
-
-graphdata=graphdata[-1,]
-rownames(tabledata_s2a_ind) <- NULL
-
+graphdata <- 
+  tabledata_s2a_ind %>% 
+  filter(variable != "Country-level collectivism") %>% 
+  select(variable, b, lower, higher)
 
 kbl(
   tabledata_s2a_ind,
   format = "latex",
-  booktabs = T,
-  escape=T,
+  booktabs = TRUE,
+  escape = TRUE,
   caption = "Is the interaction of personal force and intention affected by individualism/collectivism on Trolley dilemmas?",
-  centering=T,
-  position="H"
-  )%>%
-  kable_styling( full_width = F,  position="left")%>%
-  row_spec(row=0, bold=TRUE)
+  centering = TRUE,
+  position = "H") %>%
+  kable_styling(full_width = FALSE,  position = "left") %>%
+  row_spec(row = 0, bold = TRUE)
 
 ```
 
